@@ -22,7 +22,6 @@ async def on_ready():
     logging.info('-----------------------------------------')
     await client.change_presence(activity=discord.Game("Verifying 👀"))
 
-
 @client.command()
 @commands.is_owner()
 async def load(ctx, extension):
@@ -44,8 +43,7 @@ async def reload(ctx, extension):
     await ctx.send('{} reloaded'.format(extension))
     logging.info(f'{extension} reloaded')
 
-for filename in os.listdir('./cogs'):
-    if filename.endswith('.py'):
-        client.load_extension(f'cogs.{filename[:-3]}')
+for cog in conf['preloaded']:
+    client.load_extension(f'cogs.{cog}')
 
 client.run(config.DISCORD_TOKEN)
