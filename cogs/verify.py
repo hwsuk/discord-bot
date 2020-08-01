@@ -15,29 +15,12 @@ import sys
 with open('config.json', 'r') as f:
     conf = json.load(f)
 
-# MONGODB
-DB_HOST = config.DB_HOST
-DB_PORT = config.DB_PORT
-DB_DB = config.DB_DATABASE
-MONGODB_USERNAME = config.MONGODB_USERNAME
-MONGODB_PASSWORD = config.MONGODB_PASSWORD
-
-# DISCORD
-DISCORD_CLIENT_ID = config.DISCORD_CLIENT_ID
-DISCORD_TOKEN = config.DISCORD_TOKEN
-DISCORD_SERVER = config.DISCORD_WHITELISTED_SERVER_IDS
-
 reddit = praw.Reddit(client_id=config.PRAW_CLIENT_ID, client_secret=config.PRAW_CLIENT_SECRET,
                      username=config.PRAW_USERNAME, password=config.PRAW_PASSWORD, user_agent=config.PRAW_USER_AGENT)
 
-client = discord.Client()
-
-mongo = motor.motor_asyncio.AsyncIOMotorClient(host=DB_HOST, port=int(
-    DB_PORT), replicaSet="rs01", username=MONGODB_USERNAME, password=MONGODB_PASSWORD, authSource=DB_DB, authMechanism='SCRAM-SHA-1')
-db = mongo[DB_DB]
-
-updaterRole = int(config.DISCORD_UPDATER_ROLE)
-verifiedRole = int(config.DISCORD_VERIFIED_ROLE)
+mongo = motor.motor_asyncio.AsyncIOMotorClient(host=config.MONGODB_HOST, port=int(
+    config.MONGODB_PORT), replicaSet="rs01", username=config.MONGODB_USERNAME, password=config.MONGODB_PASSWORD, authSource=config.MONGODB_DATABASE, authMechanism='SCRAM-SHA-1')
+db = mongo[config.MONGODB_DATABASE]
 
 logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s]\t %(name)s: %(message)s", handlers=[
     logging.StreamHandler(sys.stdout),
@@ -120,7 +103,7 @@ class Verify(commands.Cog):
     @commands.command()
     async def editflair(self, ctx, user, flair):
         """Edit a user's trade role/flair"""
-        if updaterRole not in [i.id for i in ctx.message.author.roles]:
+        if int(config.DISCORD_UPDATER_ROLE) not in [i.id for i in ctx.message.author.roles]:
             desc = "Hey, looks like you don't have permission to do this!\nPlease contact a mod if you feel should have this permission"
             await ctx.send(embed=discord.Embed(description=desc))
             return
@@ -183,7 +166,7 @@ class Verify(commands.Cog):
     @commands.command()
     async def removeuser(self, ctx, user):
         """Removes a user from the verification database"""
-        if updaterRole not in [i.id for i in ctx.message.author.roles]:
+        if int(config.DISCORD_UPDATER_ROLE) not in [i.id for i in ctx.message.author.roles]:
             desc = "Hey, looks like you don't have permission to do this!\nPlease contact a mod if you feel should have this permission"
             await ctx.send(embed=discord.Embed(description=desc))
             return
@@ -222,9 +205,9 @@ class Verify(commands.Cog):
                 try:
                     await db.users.delete_one({"discord.id": f"{userData['discord']['id']}"})
                     logging.info(f"Removed user {userData['discord']['username']} from the database")
-                    server = self.client.get_guild(int(DISCORD_SERVER))
+                    server = self.client.get_guild(int(config.DISCORD_SERVER_ID))
                     member = server.get_member(int(userData['discord']['id']))
-                    veriRole = server.get_role(verifiedRole)
+                    veriRole = server.get_role(int(config.DISCORD_VERIFIED_ROLE))
                     await member.remove_roles(veriRole)
                     embed = discord.Embed(description=f"User <@{userData['discord']['id']}> removed from the database successfully 🤠")
                     await ctx.send(embed=embed)
@@ -237,9 +220,9 @@ class Verify(commands.Cog):
     # Useful for verification event
     async def set_verified(self, member_id):
         # Get guild object from ID
-        server = self.client.get_guild(int(DISCORD_SERVER))
+        server = self.client.get_guild(int(config.DISCORD_SERVER_ID))
         # Get role object of verified role by ID
-        role = server.get_role(verifiedRole)
+        role = server.get_role(int(config.DISCORD_VERIFIED_ROLE))
         # Get member object by discord user ID
         member = server.get_member(int(member_id))
 
@@ -303,7 +286,7 @@ class Verify(commands.Cog):
     async def get_trades(self, discordID):
         tradeRoles = [conf['flairs'][i]['rid']
                       for i in conf['flairs']]  # lowest trade role first
-        guild = self.client.get_guild(int(DISCORD_SERVER))
+        guild = self.client.get_guild(int(config.DISCORD_SERVER_ID))
         member = guild.get_member(int(discordID))
         # returns all roles in member, lowest in hierarchy first
         memberRoles = member.roles
@@ -323,7 +306,7 @@ class Verify(commands.Cog):
     # Useful for editflair
     async def remove_trades(self, discordID):
         # Get guild object from ID
-        server = self.client.get_guild(int(DISCORD_SERVER))
+        server = self.client.get_guild(int(config.DISCORD_SERVER_ID))
         # Get member object by discord user ID
         member = server.get_member(int(discordID))
         flairRoles = [conf['flairs'][i]['rid'] for i in conf['flairs']]
@@ -353,7 +336,7 @@ class Verify(commands.Cog):
     # Useful for editflair
     async def set_trade_role(self, userData, flair):
         # Get guild object from ID
-        server = self.client.get_guild(int(DISCORD_SERVER))
+        server = self.client.get_guild(int(config.DISCORD_SERVER_ID))
         # Get role object of verified role by ID
         role = server.get_role(conf['flairs'][flair]['rid'])
         # Get member object by discord user ID
