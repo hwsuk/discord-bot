@@ -50,26 +50,25 @@ class Cex(commands.Cog):
             return
 
         if 'https://uk.webuy.com/' in message.content.lower():
-            for word in message.content:
+            for word in message.content.lower().split(' '):
                 if not word.startswith('https://uk.webuy.com/'):
                     continue
                 if parse.parse_qs(parse.urlsplit(word).query)['id'] == {}:
                     continue
                 try:
-                    productId = parse.parse_qs(parse.urlsplit(word).query)['id']
+                    productId = parse.parse_qs(parse.urlsplit(word).query)['id'][0]
                 except KeyError:
                     continue
                 cexSearch = await self.cex_search(productId)
                 if cexSearch is None:
                     continue
+                cexSearch = cexSearch['boxes'][0]
                 newEmbed = await self.make_cex_embed(cexSearch)
                 await message.edit(suppress=True)
                 await message.channel.send(embed=newEmbed)
 
         if 'cex' in message.content.lower():
             await message.add_reaction(cexEmoji)
-
-        await self.client.process_commands(message)
 
     # Search command
     @commands.command()
