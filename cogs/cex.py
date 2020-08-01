@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 import time
 import urllib.parse
+from urllib import parse
 import re
 
 cexRed = 0xff0000
@@ -48,20 +49,27 @@ class Cex(commands.Cog):
         if message.author.bot == True or message.author.id == self.client.user.id:
             return
 
-        if 'https://uk.webuy.com/' in message.content:
-            product_id = message.content.split("id=",1)[1].split("&",1)[0].split(' ')[0]
-            cexSearch = await self.cex_search(product_id)
-            cexSearch = cexSearch['boxes'][0]
-            newEmbed = await self.make_cex_embed(cexSearch)
-            await message.edit(suppress=True)
-            await message.channel.send(embed=newEmbed)
-            await self.client.process_commands(message)
-            return
+        if 'https://uk.webuy.com/' in message.content.lower():
+            for word in message.content:
+                if not word.startswith('https://uk.webuy.com/'):
+                    continue
+                if parse.parse_qs(parse.urlsplit(word).query)['id'] == {}:
+                    continue
+                try:
+                    productId = parse.parse_qs(parse.urlsplit(word).query)['id']
+                except KeyError:
+                    continue
+                cexSearch = await self.cex_search(productId)
+                if cexSearch is None:
+                    continue
+                newEmbed = await self.make_cex_embed(cexSearch)
+                await message.edit(suppress=True)
+                await message.channel.send(embed=newEmbed)
 
         if 'cex' in message.content.lower():
             await message.add_reaction(cexEmoji)
-            await self.client.process_commands(message)
-            return
+
+        await self.client.process_commands(message)
 
     # Search command
     @commands.command()
@@ -69,6 +77,7 @@ class Cex(commands.Cog):
         """Searches the CeX website"""
         index = {}
         indexReg = re.compile("r=[0-9]+")
+        # Check for an index modifier argument ([p]search product r=3)
         if indexReg.match(arg[-1]):
             match = indexReg.match(arg[-1])
             index['current'] = int(match.group(1))
@@ -76,17 +85,19 @@ class Cex(commands.Cog):
         else:
             index['current'] = 0
         arg = " ".join(arg)
-        cexSearch = await self.cex_search(arg)
-        if cexSearch is None: # No results for that search term
+        cexSearch = await self.cex_search(arg) # Fetch search results
+
+        if cexSearch is None: # If no results for that search term
             await self.no_results(ctx, arg)
             return
         else:
             cexSearch = cexSearch['boxes']
-        if len(cexSearch) == 1: # Only one result
+        if len(cexSearch) == 1: # If only one result
             index = {'min':0,'current':0,'max':0}
             cexEmbed = await self.make_cex_embed(cexSearch[index['current']],index)
             await ctx.send(embed=cexEmbed)
             return
+
         try: # Check that the current index, if modified, is within range
             cexSearch[index['current']]
         except IndexError:
@@ -97,8 +108,11 @@ class Cex(commands.Cog):
         cexEmbed = await self.make_cex_embed(cexSearch[index['current']], index)
         messageObject = await ctx.send(content=f"<https://uk.webuy.com/search/index.php?stext={urllib.parse.quote(arg)}&categoryID=&is=0>", embed=cexEmbed) # send a result
         allowedEmojis = await self.add_buttons(messageObject, index) # add buttons and get allowedEmojis
+
         def reaction_info_check(reaction, user):
             return user == ctx.author and reaction.message.id == messageObject.id
+
+        # Wait for a reaction
         try:
             reaction, user = await self.client.wait_for('reaction_add', timeout=120.0, check=reaction_info_check)
         except asyncio.TimeoutError:
@@ -114,6 +128,8 @@ class Cex(commands.Cog):
                     index['current'] = index['current'] - 1
                     await self.edit_result(ctx, cexSearch, index, messageObject, arg)
         return
+
+    # Helper functions
 
     # Retrieve search data
     async def cex_search(self, searchTerm):
