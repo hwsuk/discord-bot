@@ -29,4 +29,4 @@
 | `REACTION_CHANNEL_ID` | The channel ID used for feedback | Yes | |
 | `MOD_CHANNEL_ID` | The channel ID used for mod notifications of feedback items | Yes | |
 | `REACTION_THRESHOLD` | Determines how many upvotes a feedback submission needs before it is sent to the mods | Yes | |
-| `LOGGING_FILENAME` | Determines the naming format used for log files | No | f'bot-{datetime.now().strftime("%m-%d-%Y-%H%M%S")}.log' |
+| `LOGGING_FILENAME` | Determines the naming format used for log files | No | `f'bot-{datetime.now().strftime("%m-%d-%Y-%H%M%S")}.log'` |
