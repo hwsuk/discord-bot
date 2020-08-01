@@ -16,15 +16,14 @@ def get_env(key, required=False, or_else=None):
             return or_else
 
 
-DB_HOST = get_env("MONGODB_HOST", or_else="127.0.0.1")
-DB_PORT = get_env("MONGODB_PORT", or_else="27017")
+MONGODB_HOST = get_env("MONGODB_HOST", or_else="127.0.0.1")
+MONGODB_PORT = get_env("MONGODB_PORT", or_else="27017")
 MONGODB_USERNAME = get_env("MONGODB_USERNAME", required=True)
 MONGODB_PASSWORD = get_env("MONGODB_PASSWORD", required=True)
-DB_DATABASE = get_env("MONGODB_DATABASE", or_else="hwsuk")
+MONGODB_DATABASE = get_env("MONGODB_DATABASE", or_else="hwsuk")
 
 DISCORD_CLIENT_ID = get_env("DISCORD_CLIENT_ID", required=True)
-DISCORD_CLIENT_SECRET = get_env("DISCORD_CLIENT_SECRET", required=True)
-DISCORD_WHITELISTED_SERVER_IDS = get_env("DISCORD_WHITELISTED_SERVER_IDS", required=True)
+DISCORD_SERVER_ID = get_env("DISCORD_SERVER_ID", required=True)
 DISCORD_TOKEN = get_env("DISCORD_TOKEN", required=True)
 DISCORD_PREFIX = get_env("DISCORD_PREFIX", or_else="!")
 DISCORD_UPDATER_ROLE = get_env("DISCORD_UPDATER_ROLE", or_else="718267453272096778")
