@@ -74,6 +74,7 @@ class Cex(commands.Cog):
     @commands.command()
     async def search(self, ctx, *arg):
         """Searches the CeX website"""
+        # Prepare and sanitise the search arguments
         index = {}
         indexReg = re.compile("r=[0-9]+")
         # Check for an index modifier argument ([p]search product r=3)
@@ -84,8 +85,8 @@ class Cex(commands.Cog):
         else:
             index['current'] = 0
         arg = " ".join(arg)
-        cexSearch = await self.cex_search(arg) # Fetch search results
-
+        # Fetch search results
+        cexSearch = await self.cex_search(arg)
         if cexSearch is None: # If no results for that search term
             await self.no_results(ctx, arg)
             return
@@ -96,8 +97,8 @@ class Cex(commands.Cog):
             cexEmbed = await self.make_cex_embed(cexSearch[index['current']],index)
             await ctx.send(embed=cexEmbed)
             return
-
-        try: # Check that the current index, if modified, is within range
+        # Check that the current index, if modified, is within range
+        try:
             cexSearch[index['current']]
         except IndexError:
             index['current'] = len(cexSearch) - 1
@@ -172,8 +173,11 @@ class Cex(commands.Cog):
         cexEmbed = await self.make_cex_embed(cexSearch[index['current']], index)
         await messageObject.edit(content=f"<https://uk.webuy.com/search/index.php?stext={urllib.parse.quote(searchTerm)}&categoryID=&is=0>", embed=cexEmbed)
         allowedEmojis = await self.add_buttons(messageObject, index) # add buttons and get allowedEmojis
+
         def reaction_info_check(reaction, user):
             return user == ctx.author and reaction.message.id == messageObject.id
+
+        # Wait for a reaction
         try:
             reaction, user = await self.client.wait_for('reaction_add', timeout=120.0, check=reaction_info_check)
         except asyncio.TimeoutError:
