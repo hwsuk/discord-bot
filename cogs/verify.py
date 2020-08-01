@@ -16,25 +16,25 @@ with open('config.json', 'r') as f:
     conf = json.load(f)
 
 # MONGODB
-DB_HOST = config.DB_HOST
-DB_PORT = config.DB_PORT
-DB_DB = config.DB_DATABASE
+MONGODB_HOST = config.MONGODB_HOST
+MONGODB_PORT = config.MONGODB_PORT
+MONGODB_DB = config.MONGODB_DATABASE
 MONGODB_USERNAME = config.MONGODB_USERNAME
 MONGODB_PASSWORD = config.MONGODB_PASSWORD
 
 # DISCORD
 DISCORD_CLIENT_ID = config.DISCORD_CLIENT_ID
 DISCORD_TOKEN = config.DISCORD_TOKEN
-DISCORD_SERVER = config.DISCORD_WHITELISTED_SERVER_IDS
+DISCORD_SERVER = config.DISCORD_SERVER_ID
 
 reddit = praw.Reddit(client_id=config.PRAW_CLIENT_ID, client_secret=config.PRAW_CLIENT_SECRET,
                      username=config.PRAW_USERNAME, password=config.PRAW_PASSWORD, user_agent=config.PRAW_USER_AGENT)
 
 client = discord.Client()
 
-mongo = motor.motor_asyncio.AsyncIOMotorClient(host=DB_HOST, port=int(
-    DB_PORT), replicaSet="rs01", username=MONGODB_USERNAME, password=MONGODB_PASSWORD, authSource=DB_DB, authMechanism='SCRAM-SHA-1')
-db = mongo[DB_DB]
+mongo = motor.motor_asyncio.AsyncIOMotorClient(host=MONGODB_HOST, port=int(
+    MONGODB_PORT), replicaSet="rs01", username=MONGODB_USERNAME, password=MONGODB_PASSWORD, authSource=MONGODB_DB, authMechanism='SCRAM-SHA-1')
+db = mongo[MONGODB_DB]
 
 updaterRole = int(config.DISCORD_UPDATER_ROLE)
 verifiedRole = int(config.DISCORD_VERIFIED_ROLE)
