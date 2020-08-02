@@ -22,7 +22,6 @@ MONGODB_USERNAME = get_env("MONGODB_USERNAME", required=True)
 MONGODB_PASSWORD = get_env("MONGODB_PASSWORD", required=True)
 MONGODB_DATABASE = get_env("MONGODB_DATABASE", or_else="hwsuk")
 
-DISCORD_CLIENT_ID = get_env("DISCORD_CLIENT_ID", required=True)
 DISCORD_SERVER_ID = get_env("DISCORD_SERVER_ID", required=True)
 DISCORD_TOKEN = get_env("DISCORD_TOKEN", required=True)
 DISCORD_PREFIX = get_env("DISCORD_PREFIX", or_else="!")
