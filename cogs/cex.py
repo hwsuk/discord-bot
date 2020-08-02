@@ -76,11 +76,11 @@ class Cex(commands.Cog):
         """Searches the CeX website"""
         # Prepare and sanitise the search arguments
         index = {}
-        indexReg = re.compile("r=[0-9]+")
+        indexReg = re.compile("r=([0-9]+)")
         # Check for an index modifier argument ([p]search product r=3)
         if indexReg.match(arg[-1]):
             match = indexReg.match(arg[-1])
-            index['current'] = int(match.group(1))
+            index['current'] = int(match.group(1)) - 1
             arg = arg[:-1]
         else:
             index['current'] = 0
@@ -123,9 +123,13 @@ class Cex(commands.Cog):
             if reaction.emoji in allowedEmojis:
                 if reaction.emoji == '▶':
                     index['current'] = index['current'] + 1
+                    messageObject = await messageObject.channel.fetch_message(messageObject.id)
+                    await messageObject.remove_reaction(reaction.emoji,ctx.author)
                     await self.edit_result(ctx, cexSearch, index, messageObject, arg)
                 if reaction.emoji == '◀':
                     index['current'] = index['current'] - 1
+                    messageObject = await messageObject.channel.fetch_message(messageObject.id)
+                    await messageObject.remove_reaction(reaction.emoji,ctx.author)
                     await self.edit_result(ctx, cexSearch, index, messageObject, arg)
         return
 
@@ -169,7 +173,6 @@ class Cex(commands.Cog):
         return embed
 
     async def edit_result(self, ctx, cexSearch, index, messageObject, searchTerm):
-        await messageObject.clear_reactions()
         cexEmbed = await self.make_cex_embed(cexSearch[index['current']], index)
         await messageObject.edit(content=f"<https://uk.webuy.com/search/index.php?stext={urllib.parse.quote(searchTerm)}&categoryID=&is=0>", embed=cexEmbed)
         allowedEmojis = await self.add_buttons(messageObject, index) # add buttons and get allowedEmojis
@@ -188,9 +191,13 @@ class Cex(commands.Cog):
             if reaction.emoji in allowedEmojis:
                 if reaction.emoji == '▶':
                     index['current'] = index['current'] + 1
+                    messageObject = await messageObject.channel.fetch_message(messageObject.id)
+                    await messageObject.remove_reaction(reaction.emoji,ctx.author)
                     await self.edit_result(ctx, cexSearch, index, messageObject, searchTerm)
                 if reaction.emoji == '◀':
                     index['current'] = index['current'] - 1
+                    messageObject = await messageObject.channel.fetch_message(messageObject.id)
+                    await messageObject.remove_reaction(reaction.emoji,ctx.author)
                     await self.edit_result(ctx, cexSearch, index, messageObject, searchTerm)
 
     async def no_results(self, ctx, arg):
@@ -200,14 +207,26 @@ class Cex(commands.Cog):
         return
 
     async def add_buttons(self, messageObject, index):
+        messageObject = await messageObject.channel.fetch_message(messageObject.id)
+        oldReacts = []
+        for reaction in messageObject.reactions:
+            if reaction.me:
+                oldReacts.append(reaction.emoji)
         if index['current'] == index['min']: # first result, no back arrow required
             allowedEmojis = ['▶']
         if index['current'] == index['max']: # last result, no forward arrow required
             allowedEmojis = ['◀']
         if index['min'] < index['current'] < index['max']: # a middle result, both arrows required
             allowedEmojis = ['◀','▶']
-        for emoji in allowedEmojis:
-            await messageObject.add_reaction(emoji)
+        if oldReacts == allowedEmojis:
+            for reaction in messageObject.reactions:
+                if reaction.me:
+                    continue
+                await messageObject.remove_reaction(reaction.emoji,ctx.author)
+        else:
+            await messageObject.clear_reactions()
+            for emoji in allowedEmojis:
+                await messageObject.add_reaction(emoji)
         return allowedEmojis
 
 def setup(client):
