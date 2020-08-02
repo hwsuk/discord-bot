@@ -1,4 +1,8 @@
 {
+    "preloaded":[
+        "feedback",
+        "verify"
+    ],
     "flairs": {
         "3+": {
             "flairtext": "3+",
