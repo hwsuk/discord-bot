@@ -19,8 +19,7 @@
 | `MONGODB_USERNAME` | The username with which to authenticate with MongoDB | Yes | |
 | `MONGODB_PASSWORD` | The password with which to authenticate with MongoDB | Yes | |
 | `MONGODB_DATABASE` | The name of the database in MongoDB to read/write data | No | `hwsuk` |
-| `DISCORD_CLIENT_ID` | The OAuth2 client ID of the Discord application | Yes | |
-| `DISCORD_SERVER_ID` | The server ID that is checked when requests to Discord's API are made | Yes | |
+| `DISCORD_SERVER_ID` | The server ID that is checked when modifying roles or searching for members | Yes | |
 | `PRAW_CLIENT_ID` | The client ID for the application used for PRAW queries | Yes | |
 | `PRAW_CLIENT_SECRET` | The client secret for the application used for PRAW queries | Yes | |
 | `PRAW_PASSWORD` | The password for the user used for PRAW queries | Yes | |
