@@ -123,12 +123,12 @@ class Cex(commands.Cog):
             if reaction.emoji == '▶':
                 index['current'] = index['current'] + 1
                 messageObject = await messageObject.channel.fetch_message(messageObject.id)
-                await messageObject.remove_reaction(reaction.emoji,ctx.author)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
                 await self.edit_result(ctx, cexSearch, index, messageObject, arg)
             if reaction.emoji == '◀':
                 index['current'] = index['current'] - 1
                 messageObject = await messageObject.channel.fetch_message(messageObject.id)
-                await messageObject.remove_reaction(reaction.emoji,ctx.author)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
                 await self.edit_result(ctx, cexSearch, index, messageObject, arg)
 
     # Helper functions
@@ -189,12 +189,12 @@ class Cex(commands.Cog):
             if reaction.emoji == '▶':
                 index['current'] = index['current'] + 1
                 messageObject = await messageObject.channel.fetch_message(messageObject.id)
-                await messageObject.remove_reaction(reaction.emoji,ctx.author)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
                 await self.edit_result(ctx, cexSearch, index, messageObject, searchTerm)
             if reaction.emoji == '◀':
                 index['current'] = index['current'] - 1
                 messageObject = await messageObject.channel.fetch_message(messageObject.id)
-                await messageObject.remove_reaction(reaction.emoji,ctx.author)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
                 await self.edit_result(ctx, cexSearch, index, messageObject, searchTerm)
 
     async def no_results(self, ctx, arg):
@@ -219,7 +219,7 @@ class Cex(commands.Cog):
             for reaction in messageObject.reactions:
                 if reaction.me:
                     continue
-                await messageObject.remove_reaction(reaction.emoji,ctx.author)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
         else:
             await messageObject.clear_reactions()
             for emoji in allowedEmojis:
