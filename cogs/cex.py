@@ -107,10 +107,10 @@ class Cex(commands.Cog):
                 'max':len(cexSearch)-1}
         cexEmbed = await self.make_cex_embed(cexSearch[index['current']], index)
         messageObject = await ctx.send(content=f"<https://uk.webuy.com/search/index.php?stext={urllib.parse.quote(arg)}&categoryID=&is=0>", embed=cexEmbed) # send a result
-        allowedEmojis = await self.add_buttons(messageObject, index) # add buttons and get allowedEmojis
+        allowedEmojis = await self.add_buttons(ctx, messageObject, index) # add buttons and get allowedEmojis
 
         def reaction_info_check(reaction, user):
-            return user == ctx.author and reaction.message.id == messageObject.id
+            return user == ctx.author and reaction.message.id == messageObject.id and reaction.emoji in allowedEmojis
 
         # Wait for a reaction
         try:
@@ -120,18 +120,16 @@ class Cex(commands.Cog):
             return
         else:
             # User has reacted with an emoji, find out which one
-            if reaction.emoji in allowedEmojis:
-                if reaction.emoji == '▶':
-                    index['current'] = index['current'] + 1
-                    messageObject = await messageObject.channel.fetch_message(messageObject.id)
-                    await messageObject.remove_reaction(reaction.emoji,ctx.author)
-                    await self.edit_result(ctx, cexSearch, index, messageObject, arg)
-                if reaction.emoji == '◀':
-                    index['current'] = index['current'] - 1
-                    messageObject = await messageObject.channel.fetch_message(messageObject.id)
-                    await messageObject.remove_reaction(reaction.emoji,ctx.author)
-                    await self.edit_result(ctx, cexSearch, index, messageObject, arg)
-        return
+            if reaction.emoji == '▶':
+                index['current'] = index['current'] + 1
+                messageObject = await messageObject.channel.fetch_message(messageObject.id)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
+                await self.edit_result(ctx, cexSearch, index, messageObject, arg)
+            if reaction.emoji == '◀':
+                index['current'] = index['current'] - 1
+                messageObject = await messageObject.channel.fetch_message(messageObject.id)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
+                await self.edit_result(ctx, cexSearch, index, messageObject, arg)
 
     # Helper functions
 
@@ -175,10 +173,10 @@ class Cex(commands.Cog):
     async def edit_result(self, ctx, cexSearch, index, messageObject, searchTerm):
         cexEmbed = await self.make_cex_embed(cexSearch[index['current']], index)
         await messageObject.edit(content=f"<https://uk.webuy.com/search/index.php?stext={urllib.parse.quote(searchTerm)}&categoryID=&is=0>", embed=cexEmbed)
-        allowedEmojis = await self.add_buttons(messageObject, index) # add buttons and get allowedEmojis
+        allowedEmojis = await self.add_buttons(ctx, messageObject, index) # add buttons and get allowedEmojis
 
         def reaction_info_check(reaction, user):
-            return user == ctx.author and reaction.message.id == messageObject.id
+            return user == ctx.author and reaction.message.id == messageObject.id and reaction.emoji in allowedEmojis
 
         # Wait for a reaction
         try:
@@ -188,17 +186,16 @@ class Cex(commands.Cog):
             return
         else:
             # User has reacted with an emoji, find out which one
-            if reaction.emoji in allowedEmojis:
-                if reaction.emoji == '▶':
-                    index['current'] = index['current'] + 1
-                    messageObject = await messageObject.channel.fetch_message(messageObject.id)
-                    await messageObject.remove_reaction(reaction.emoji,ctx.author)
-                    await self.edit_result(ctx, cexSearch, index, messageObject, searchTerm)
-                if reaction.emoji == '◀':
-                    index['current'] = index['current'] - 1
-                    messageObject = await messageObject.channel.fetch_message(messageObject.id)
-                    await messageObject.remove_reaction(reaction.emoji,ctx.author)
-                    await self.edit_result(ctx, cexSearch, index, messageObject, searchTerm)
+            if reaction.emoji == '▶':
+                index['current'] = index['current'] + 1
+                messageObject = await messageObject.channel.fetch_message(messageObject.id)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
+                await self.edit_result(ctx, cexSearch, index, messageObject, searchTerm)
+            if reaction.emoji == '◀':
+                index['current'] = index['current'] - 1
+                messageObject = await messageObject.channel.fetch_message(messageObject.id)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
+                await self.edit_result(ctx, cexSearch, index, messageObject, searchTerm)
 
     async def no_results(self, ctx, arg):
         embed = discord.Embed(colour=cexRed, description="No products found for `{}`".format(arg.replace('`','``')))
@@ -206,7 +203,7 @@ class Cex(commands.Cog):
         await ctx.send(embed=embed)
         return
 
-    async def add_buttons(self, messageObject, index):
+    async def add_buttons(self, ctx, messageObject, index):
         messageObject = await messageObject.channel.fetch_message(messageObject.id)
         oldReacts = []
         for reaction in messageObject.reactions:
@@ -222,7 +219,7 @@ class Cex(commands.Cog):
             for reaction in messageObject.reactions:
                 if reaction.me:
                     continue
-                await messageObject.remove_reaction(reaction.emoji,ctx.author)
+                await messageObject.remove_reaction(reaction.emoji, ctx.author)
         else:
             await messageObject.clear_reactions()
             for emoji in allowedEmojis:
