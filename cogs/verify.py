@@ -33,6 +33,9 @@ class Verify(commands.Cog):
         self.client = client
         self.monitor_db.start()
 
+    def cog_unload(self):
+        self.monitor_db.cancel()
+
     # Events
     @commands.Cog.listener()
     async def on_ready(self):
