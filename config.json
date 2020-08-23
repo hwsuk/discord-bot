@@ -1,7 +1,8 @@
 {
     "preloaded":[
         "feedback",
-        "verify"
+        "verify",
+        "cex"
     ],
     "flairs": {
         "3+": {
