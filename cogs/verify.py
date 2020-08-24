@@ -357,8 +357,7 @@ class Verify(commands.Cog):
     @tasks.loop(seconds=20)
     async def monitor_db(self):
         """Monitor DB for changes"""
-        queue = [i for i in db.queue.find()]
-        for user in [i for i in queue if i.get("verified")]:
+        for user in [i for i in db.queue.find() if i.get("verified")]:
             await self.set_verified(user['discord']['id'])
             await db.queue.find_one_and_delete(user["_id"])
 
