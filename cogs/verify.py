@@ -352,14 +352,22 @@ class Verify(commands.Cog):
                 f"ERROR ADDING ROLE FOR {member.name}#{member.discriminator} IN {server.name}: {e}")
             return False
 
+    # Subroutine for the monitor_db task to avoid bare exceptions blocking sigterm
+    async def monitor_db_subroutine(self):
+        """Monitor DB for changes"""
+        try:
+            async for user in [i for i in db.queue.find() if i.get("verified")]:
+                await self.set_verified(user['discord']['id'])
+                await db.queue.find_one_and_delete(user["_id"])
+        except Exception as e:
+            logging.error(f'ERROR MONITORING DB: {e}')
+
     # Tasks
 
     @tasks.loop(seconds=20)
     async def monitor_db(self):
         """Monitor DB for changes"""
-        for user in [i for i in db.queue.find() if i.get("verified")]:
-            await self.set_verified(user['discord']['id'])
-            await db.queue.find_one_and_delete(user["_id"])
+        await self.monitor_db_subroutine()
 
 def setup(client):
     client.add_cog(Verify(client))
