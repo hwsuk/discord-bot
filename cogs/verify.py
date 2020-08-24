@@ -352,7 +352,7 @@ class Verify(commands.Cog):
                 f"ERROR ADDING ROLE FOR {member.name}#{member.discriminator} IN {server.name}: {e}")
             return False
 
-    # Subroutine for the monitor_db task to avoid bare exceptions blocking sigterm
+    # Subroutine for the monitor_db task
     async def monitor_db_subroutine(self):
         """Monitor DB for changes"""
         try:
