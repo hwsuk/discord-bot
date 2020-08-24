@@ -356,17 +356,11 @@ class Verify(commands.Cog):
     async def monitor_db_subroutine(self):
         """Monitor DB for changes"""
         try:
-            logging.info("Monitoring DB")
-            async for change in db.queue.watch():
-                if change["operationType"] == "insert":
-                    user = await db.users.find_one({"_id": change["fullDocument"]["ref"]})
-                    if user.get("verified"):
-                        await self.set_verified(user['discord']['id'])
-                        await db.queue.find_one_and_delete({"_id": change["fullDocument"]['_id']})
+            async for user in [i for i in db.queue.find() if i.get("verified")]:
+                await self.set_verified(user['discord']['id'])
+                await db.queue.find_one_and_delete(user["_id"])
         except Exception as e:
             logging.error(f'ERROR MONITORING DB: {e}')
-            logging.warning('WAITING BEFORE TRYING AGAIN')
-            time.sleep(5)
 
     # Tasks
 
