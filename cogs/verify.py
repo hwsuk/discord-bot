@@ -366,7 +366,7 @@ class Verify(commands.Cog):
 
     # Tasks
 
-    @tasks.loop(seconds=20)
+    @tasks.loop(seconds=10)
     async def monitor_db(self):
         """Monitor DB for changes"""
         await self.monitor_db_subroutine()
