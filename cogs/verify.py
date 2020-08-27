@@ -357,8 +357,8 @@ class Verify(commands.Cog):
         """Monitor DB for changes"""
         try:
             cursor = db.queue.find()
-            queue = cursor.to_list(None)
-            async for user in [i for i in queue if i.get("verified")]:
+            queue = cursor.to_list(10)
+            async for user in [i for i in queue if i['verified']:
                 await self.set_verified(user['discord']['id'])
                 await db.queue.find_one_and_delete(user["_id"])
         except Exception as e:
@@ -370,6 +370,5 @@ class Verify(commands.Cog):
     async def monitor_db(self):
         """Monitor DB for changes"""
         await self.monitor_db_subroutine()
-
 def setup(client):
     client.add_cog(Verify(client))
