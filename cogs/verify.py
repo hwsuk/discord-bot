@@ -358,7 +358,7 @@ class Verify(commands.Cog):
         try:
             cursor = db.queue.find()
             queue = cursor.to_list(10)
-            async for user in [i for i in queue if i['verified']:
+            async for user in [i for i in queue if i['verified']]:
                 await self.set_verified(user['discord']['id'])
                 await db.queue.find_one_and_delete(user["_id"])
         except Exception as e:
