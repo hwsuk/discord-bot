@@ -67,9 +67,6 @@ class Cex(commands.Cog):
                 await message.edit(suppress=True)
                 await message.channel.send(embed=newEmbed)
 
-        if 'cex' in message.content.lower():
-            await message.add_reaction(cexEmoji)
-
     # Search command
     @commands.command()
     async def search(self, ctx, *arg):
