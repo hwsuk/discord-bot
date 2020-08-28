@@ -355,20 +355,23 @@ class Verify(commands.Cog):
     # Subroutine for the monitor_db task
     async def monitor_db_subroutine(self):
         """Monitor DB for changes"""
-        try:
-            cursor = db.queue.find()
-            queue = cursor.to_list(10)
-            async for user in [i for i in queue if i['verified']]:
-                await self.set_verified(user['discord']['id'])
-                await db.queue.find_one_and_delete(user["_id"])
-        except Exception as e:
-            logging.error(f'ERROR MONITORING DB: {e}')
+        backlog = await db.queue.find({}).to_list(None)
+        if(backlog):
+            logging.debug('Verifying users')
+            for item in backlog:
+                user = await db.users.find_one({"_id": item["ref"]})
+                if user.get("verified"):
+                    await self.set_verified(user['discord']['id'])
+                else:
+                    logging.warning(f'Weird, {item["ref"]} was in the queue but is not verified.')
+                await db.queue.find_one_and_delete({"_id": item['_id']})
 
     # Tasks
 
-    @tasks.loop(seconds=10)
+    @tasks.loop(seconds=20)
     async def monitor_db(self):
         """Monitor DB for changes"""
         await self.monitor_db_subroutine()
+
 def setup(client):
     client.add_cog(Verify(client))
