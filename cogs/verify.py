@@ -357,6 +357,7 @@ class Verify(commands.Cog):
     @tasks.loop(seconds=20)
     async def monitor_db(self):
         """Monitor DB for changes"""
+        try:
             logging.info("Monitoring DB")
             async for change in db.queue.watch():
                 if change["operationType"] == "insert":
