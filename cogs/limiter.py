@@ -43,21 +43,28 @@ class Limiter(commands.Cog):
                 if deletion_success:
                     self.send_info_message(author, message.channel.name, content)
 
-    async def send_info_message(self, author: discord.Member, channel_name: str, deleted_content: str):
+    async def make_embed(self, author: discord.Member, deleted_content: str):
+        user = await self.client.fetch_user(author.id)
+        embed = discord.Embed(description=deleted_content, colour=author.colour)
+        if author.avatar is None:
+            embed.set_author(name=author.nick, icon_url = f"https://cdn.discord.com/embed/avatars/{user.discriminator}.png?size=128")
+        else:
+            embed.set_author(name=author.nick, icon_url = f"https://cdn.discord.com/avatars/{author.id}/{author.avatar}?size=128")
+        return embed
+
+    async def send_info_message(self, author: discord.Member, channel_id: str, deleted_content: str):
         if author.dm_channel is None:
             await author.create_dm()
         dm_channel = author.dm_channel
-        content = "Your post in {} has been removed due to being within {} of your last post.\n".format(channel_name, str(datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS)))
-        content += "The message has been saved for you:\n"
-        content += "```\n"
-        content += deleted_content + "\n"
-        content += "```"
+        content = f"Your post in <#{channel_id}> has been removed due to being within {str(datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS))} of your last post."]
+        content += "\nThe message has been saved for you")
+        embed = await self.make_embed(author, deleted_content)
         try:
-            await dm_channel.send(content)
-        except discord.Forbidden:
-            print("Failed to message user {} due to missing permissions".format(author))
-        except discord.HTTPException as e:
-            print("Failed to message user {} : {}".format(author, e))
+            await dm_channel.send('\n'.join(content), embed=embed)
+        except: # If we can't DM the user
+            backup_channel = self.client.get_channel(config.BUY_SELL_BACKUP_DM_CHANNEL_ID)
+            content = f"<@{author.id}> {content}"
+            await backup_channel.send(content=content, embed=embed)
 
 def setup(client):
     client.add_cog(Limiter(client))
