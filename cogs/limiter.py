@@ -58,3 +58,6 @@ class Limiter(commands.Cog):
             print("Failed to message user {} due to missing permissions".format(author))
         except discord.HTTPException as e:
             print("Failed to message user {} : {}".format(author, e))
+
+def setup(client):
+    client.add_cog(Limiter(client))
