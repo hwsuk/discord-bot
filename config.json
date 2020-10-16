@@ -2,7 +2,8 @@
     "preloaded":[
         "feedback",
         "verify",
-        "cex"
+        "cex",
+        "limiter"
     ],
     "flairs": {
         "3+": {
