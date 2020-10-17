@@ -25,7 +25,7 @@ class Limiter(commands.Cog):
         author = message.author
         content = message.content # Save this
         time_limit = datetime.datetime.now() - datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS)
-        messages = await message.channel.history(after=time_limit)
+        messages = await message.channel.history(after=time_limit).flatten()
 
         for past_message in messages:
             if past_message.author == author and past_message.id != message.id:
@@ -56,8 +56,8 @@ class Limiter(commands.Cog):
         if author.dm_channel is None:
             await author.create_dm()
         dm_channel = author.dm_channel
-        content = f"Your post in <#{channel_id}> has been removed due to being within {str(datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS))} of your last post."]
-        content += "\nThe message has been saved for you")
+        content = f"Your post in <#{channel_id}> has been removed due to being within {str(datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS))} of your last post."
+        content += "\nThe message has been saved for you"
         embed = await self.make_embed(author, deleted_content)
         try:
             await dm_channel.send('\n'.join(content), embed=embed)
