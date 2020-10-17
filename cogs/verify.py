@@ -352,23 +352,23 @@ class Verify(commands.Cog):
                 f"ERROR ADDING ROLE FOR {member.name}#{member.discriminator} IN {server.name}: {e}")
             return False
 
-    # Subroutine for the monitor_db task
-    async def monitor_db_subroutine(self):
-        """Monitor DB for changes"""
-        try:
-            cursor = db.queue.find()
-            queue = cursor.to_list(10)
-            async for user in [i for i in queue if i['verified']]:
-                await self.set_verified(user['discord']['id'])
-                await db.queue.find_one_and_delete(user["_id"])
-        except Exception as e:
-            logging.error(f'ERROR MONITORING DB: {e}')
-
     # Tasks
 
-    @tasks.loop(seconds=10)
+    @tasks.loop(seconds=20)
     async def monitor_db(self):
         """Monitor DB for changes"""
-        await self.monitor_db_subroutine()
+        try:
+            logging.info("Monitoring DB")
+            async for change in db.queue.watch():
+                if change["operationType"] == "insert":
+                    user = await db.users.find_one({"_id": change["fullDocument"]["ref"]})
+                    if user.get("verified"):
+                        await self.set_verified(user['discord']['id'])
+                        await db.queue.find_one_and_delete({"_id": change["fullDocument"]['_id']})
+        except Exception as e:
+            logging.error(f'ERROR MONITORING DB: {e}')
+            logging.warning('WAITING BEFORE TRYING AGAIN')
+            time.sleep(5)
+
 def setup(client):
     client.add_cog(Verify(client))
