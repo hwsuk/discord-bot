@@ -1,11 +1,21 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands import has_permissions, CheckFailure
 import datetime
 import config
+import logging
+import asyncio
+import sys
+
+logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s]\t %(name)s: %(message)s", handlers=[
+    logging.StreamHandler(sys.stdout),
+    logging.FileHandler(f'./logs/{config.LOGGING_FILENAME}')
+])
 
 class Limiter(commands.Cog):
     def __init__(self, client):
         self.client = client
+        self.whitelistedUsers = []
 
     # Events
     @commands.Cog.listener()
@@ -23,36 +33,61 @@ class Limiter(commands.Cog):
             return
 
         author = message.author
+        if author.id in self.whitelistedUsers:
+            return
         content = message.content # Save this
         time_limit = datetime.datetime.now() - datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS)
         messages = await message.channel.history(after=time_limit).flatten()
-
         for past_message in messages:
             if past_message.author == author and past_message.id != message.id:
                 deletion_success = False
                 try:
+                    logging.info(f"Deleting message {message.id} from {author.id}")
                     await message.delete()
                     deletion_success = True
                 except discord.Forbidden:
-                    print("Did not have permission to delete message {} from {}!".format(message.id, author))
+                    logging.warning(f"Did not have permission to delete message {message.id} from {author}!")
                 except discord.NotFound:
-                    print("Message {} from {} was already deleted".format(message.id, author))
+                    logging.info(f"Message {message.id} from {author.id} was already deleted")
                 except discord.HTTPException as e:
-                    print("Failed to delete message {} from {} : {}".format(message.id, author, e))
+                    logging.error(f"Failed to delete message {message.id} from {author.id} : {e}")
 
                 if deletion_success:
-                    self.send_info_message(author, message.channel.name, content)
+                    await self.send_info_message(author, message.channel.id, content)
+
+    @commands.group()
+    async def limiter(self, ctx):
+        if ctx.invoked_subcommand is None:
+            pass
+
+    @limiter.command()
+    @has_permissions(manage_roles=True)
+    async def whitelist(self, ctx, user, seconds: int):
+        """Allows a user to post in the buy-sell-trade channel within the slowmode time"""
+        if len(ctx.message.mentions) == 0:
+            await ctx.send("You need to specify a member to whitelist")
+        mentionedMember = ctx.message.mentions[0]
+
+        desc = f"{mentionedMember.mention} you can now post in <#{config.BUY_SELL_CHANNEL_ID}> for {str(datetime.timedelta(seconds=int(seconds)))}"
+        embed = discord.Embed(title=f"Whitelisted user", description=desc, colour=mentionedMember.colour)
+        await ctx.send(embed=embed)
+        self.whitelistedUsers.append(mentionedMember.id)
+        await asyncio.sleep(seconds)
+        try:
+            self.whitelistedUsers.remove(mentionedMember.id)
+        except ValueError:
+            logging.warning(f"User {mentionedMember.id} already removed from whitelist")
 
     async def make_embed(self, author: discord.Member, deleted_content: str):
         user = await self.client.fetch_user(author.id)
         embed = discord.Embed(description=deleted_content, colour=author.colour)
         if author.avatar is None:
-            embed.set_author(name=author.nick, icon_url = f"https://cdn.discord.com/embed/avatars/{user.discriminator}.png?size=128")
+            embed.set_author(name=author.display_name, icon_url = f"https://cdn.discordapp.com/embed/avatars/{user.discriminator}.png")
         else:
-            embed.set_author(name=author.nick, icon_url = f"https://cdn.discord.com/avatars/{author.id}/{author.avatar}?size=128")
+            embed.set_author(name=author.display_name, icon_url = f"https://cdn.discordapp.com/avatars/{author.id}/{author.avatar}.png")
         return embed
 
-    async def send_info_message(self, author: discord.Member, channel_id: str, deleted_content: str):
+    async def send_info_message(self, author: discord.Member, channel_id: int, deleted_content: str):
         if author.dm_channel is None:
             await author.create_dm()
         dm_channel = author.dm_channel
@@ -60,8 +95,8 @@ class Limiter(commands.Cog):
         content += "\nThe message has been saved for you"
         embed = await self.make_embed(author, deleted_content)
         try:
-            await dm_channel.send('\n'.join(content), embed=embed)
-        except: # If we can't DM the user
+            await dm_channel.send(content, embed=embed)
+        except: # If the bot can't DM the user
             backup_channel = self.client.get_channel(config.BUY_SELL_BACKUP_DM_CHANNEL_ID)
             content = f"<@{author.id}> {content}"
             await backup_channel.send(content=content, embed=embed)
