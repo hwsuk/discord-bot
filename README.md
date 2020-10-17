@@ -28,4 +28,7 @@
 | `REACTION_CHANNEL_ID` | The channel ID used for feedback | Yes | |
 | `MOD_CHANNEL_ID` | The channel ID used for mod notifications of feedback items | Yes | |
 | `REACTION_THRESHOLD` | Determines how many upvotes a feedback submission needs before it is sent to the mods | Yes | |
+| `BUY_SELL_CHANNEL_ID` | The channel ID used for removing too frequent posts | Yes | |
+| `BUY_SELL_BACKUP_DM_CHANNEL_ID` | The channel ID used for notifying users of removed posts if they have DMs disabled | No | `292032782409007115` |
+| `BUY_SELL_LIMIT_SECONDS` | The number of seconds that each user post is limited to | Yes | `259200` |
 | `LOGGING_FILENAME` | Determines the naming format used for log files | No | `f'bot-{datetime.now().strftime("%m-%d-%Y-%H%M%S")}.log'` |
