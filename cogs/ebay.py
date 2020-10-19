@@ -123,6 +123,8 @@ class Ebay(commands.Cog):
             d['price'] = await self. parse_price(product)
             d['ended_date'] = await self.parse_date(product)
             d['id'] = d['url'].split('/')[-1].split('?')[0]
+            if [type(d[i]) for i in d.keys()] != [str, str, str, float, dict, str]:
+                return None
             return d
         except:
             return None
