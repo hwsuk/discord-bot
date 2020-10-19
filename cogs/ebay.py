@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup as soup
 import datetime
 import re
 import urllib.parse
+import math
 
 headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
 
@@ -23,10 +24,10 @@ class Ebay(commands.Cog):
             return
         async with ctx.channel.typing():
             filteredTerm, filteredWords = await self.get_filter(searchTerm)
-            page = make_soup(filteredTerm)
+            page = await self.make_soup(filteredTerm)
             productList = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
             products = []
-            async for i in productList:
+            for i in productList:
                 p = await self.get_product_info(i)
                 products.append(p)
 
@@ -62,7 +63,7 @@ class Ebay(commands.Cog):
         embed = discord.Embed(title=data['title'], colour=colour)
         embed.add_field(name='Range', value=data['range'], inline=True)
         embed.add_field(name='Median', value=data['median'], inline=True)
-        embed.add_field(name='Average', value=data['average'], inline=True)
+        embed.add_field(name='Average', value=round(data['average'], 2), inline=True)
         embed.add_field(name='variance', value=f"{data['variance']}%", inline=True)
         embed.add_field(name='Number of items', value=data['numOfItems'], inline=True)
         return embed
@@ -97,14 +98,14 @@ class Ebay(commands.Cog):
         # search term with boolean operators removed
         filteredSearchTerm = [i for i in searchTerm if not i.startswith('-')]
         # remove words in search from filter
-        async for word in words:
+        for word in words:
             if word in filteredSearchTerm:
                 words.remove(word)
                 if word in filteredWords:
                     filteredWords.remove(word)
         # remove words from filter if searching for certain things
-        async for key in edgeCases.keys():
-            async for word in edgeCases[key]:
+        for key in edgeCases.keys():
+            for word in edgeCases[key]:
                 if word in filteredSearchTerm and key in words:
                     words.remove(key)
         return ' '.join(filteredSearchTerm), words
@@ -114,8 +115,8 @@ class Ebay(commands.Cog):
         d['title'] = product.find('h3', {'class': 's-item__title'}).contents[0]
         d['url'] = product.find('a')['href']
         d['image'] = product.find('img')['src']
-        d['price'] = get_price(product)
-        d['ended_date'] = parse_date(product)
+        d['price'] = await self. parse_price(product)
+        d['ended_date'] = await self.parse_date(product)
         d['id'] = d['url'].split('/')[-1].split('?')[0]
         return d
 
