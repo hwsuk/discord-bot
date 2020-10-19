@@ -49,12 +49,13 @@ class Ebay(commands.Cog):
             boxPlot = [i['price'] for i in filteredListings if quartiles[0] <= i['price'] <= quartiles [2]]
             average = sum(boxPlot) / len(boxPlot)
             variance = await self.determine_variance(boxPlot)
-            embedDetails = {'title': f'Results for {filteredTerm}',
-                            'range': f'{quartiles[0]} - {quartiles[2]}',
-                            'median': quartiles[1],
-                            'average': average,
-                            'variance': variance,
-                            'numOfItems': len(boxPlot)}
+            embedDetails = {"title": f"Results for {filteredTerm}",
+                            "range": f"£{quartiles[0]} - £{quartiles[2]}",
+                            "median": f"£{quartiles[1]}",
+                            "average": f"£{average}",
+                            "variance": f"{variance}%",
+                            "numOfItems": str(len(boxPlot)),
+                            "filteredWords": [i for i in searchTerm if i.startswith('-')]}
             embed = await self.make_embed(embedDetails)
             await ctx.send(embed=embed)
 
@@ -66,6 +67,8 @@ class Ebay(commands.Cog):
         embed.add_field(name='Average', value=round(data['average'], 2), inline=True)
         embed.add_field(name='variance', value=f"{data['variance']}%", inline=True)
         embed.add_field(name='Number of items', value=data['numOfItems'], inline=True)
+        if data['filteredWords'] != []:
+            embed.add_field(name="Filtered words", value='\n'.join(data['filteredWords']), inline=False)
         return embed
 
     async def make_soup(self, searchTerm):
