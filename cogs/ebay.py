@@ -55,7 +55,7 @@ class Ebay(commands.Cog):
                             "average": average,
                             "variance": variance,
                             "numOfItems": len(boxPlot),
-                            "filteredWords": [i for i in searchTerm if i.startswith('-')]}
+                            "filteredWords": [i.strip('-') for i in searchTerm.split(' ') if i.startswith('-')]}
             embed = await self.make_embed(embedDetails)
             await ctx.send(embed=embed)
 
