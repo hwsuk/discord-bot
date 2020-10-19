@@ -14,7 +14,7 @@ class Ebay(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.cog(aliases=['pc','chk','price','pricecheck'])
+    @commands.command(aliases=['pc','chk','price','pricecheck'])
     async def check(self, ctx, *, searchTerm):
         """Gets the average price of an item from Ebay"""
         if len(' '.join([i for i in searchTerm.split(' ') if not i.startswith('-')])) < 6:
@@ -31,7 +31,7 @@ class Ebay(commands.Cog):
                 products.append(p)
 
             def filtered_out(title: str, filteredWords: list):
-                async for word in title.split(' '):
+                for word in title.split(' '):
                     if word.lower() in filteredWords:
                         return True
                 return False
@@ -48,12 +48,11 @@ class Ebay(commands.Cog):
             boxPlot = [i['price'] for i in filteredListings if quartiles[0] <= i['price'] <= quartiles [2]]
             average = sum(boxPlot) / len(boxPlot)
             variance = await self.determine_variance(boxPlot)
-            embedDetails = {'title': f'Results for {filteredTerm}'
+            embedDetails = {'title': f'Results for {filteredTerm}',
                             'range': f'{quartiles[0]} - {quartiles[2]}',
                             'median': quartiles[1],
                             'average': average,
                             'variance': variance,
-                            'colour': ,
                             'numOfItems': len(boxPlot)}
             embed = await self.make_embed(embedDetails)
             await ctx.send(embed=embed)
@@ -94,7 +93,7 @@ class Ebay(commands.Cog):
         # remove duplicates
         words = list(dict.fromkeys(words))
         # collect words that were added to the filter
-        filteredWords = [i in searchTerm if i.startswith('-')]
+        filteredWords = [i for i in searchTerm if i.startswith('-')]
         # search term with boolean operators removed
         filteredSearchTerm = [i for i in searchTerm if not i.startswith('-')]
         # remove words in search from filter
