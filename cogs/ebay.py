@@ -51,10 +51,10 @@ class Ebay(commands.Cog):
             variance = await self.determine_variance(boxPlot)
             embedDetails = {"title": f"Results for {filteredTerm}",
                             "range": f"£{quartiles[0]} - £{quartiles[2]}",
-                            "median": f"£{quartiles[1]}",
-                            "average": f"£{average}",
-                            "variance": f"{variance}%",
-                            "numOfItems": str(len(boxPlot)),
+                            "median": quartiles[1],
+                            "average": average,
+                            "variance": variance,
+                            "numOfItems": len(boxPlot),
                             "filteredWords": [i for i in searchTerm if i.startswith('-')]}
             embed = await self.make_embed(embedDetails)
             await ctx.send(embed=embed)
@@ -63,8 +63,8 @@ class Ebay(commands.Cog):
         colour = await self.get_colour(data)
         embed = discord.Embed(title=data['title'], colour=colour)
         embed.add_field(name='Range', value=data['range'], inline=True)
-        embed.add_field(name='Median', value=data['median'], inline=True)
-        embed.add_field(name='Average', value=round(data['average'], 2), inline=True)
+        embed.add_field(name='Median', value=f"£{data['median']}", inline=True)
+        embed.add_field(name='Average', value=f"£{round(data['average'], 2)}", inline=True)
         embed.add_field(name='variance', value=f"{data['variance']}%", inline=True)
         embed.add_field(name='Number of items', value=data['numOfItems'], inline=True)
         if data['filteredWords'] != []:
