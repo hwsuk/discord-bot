@@ -17,6 +17,10 @@ class Ebay(commands.Cog):
     @commands.cog(aliases=['pc','chk','price','pricecheck'])
     async def check(self, ctx, *, searchTerm):
         """Gets the average price of an item from Ebay"""
+        if len(' '.join([i for i in searchTerm.split(' ') if not i.startswith('-')])) < 6:
+            embed = await self.error_embed('length')
+            await ctx.send(embed=embed)
+            return
         async with ctx.channel.typing()
             filteredTerm, filteredWords = await self.get_filter(searchTerm)
             page = make_soup(filteredTerm)
@@ -180,11 +184,16 @@ class Ebay(commands.Cog):
 
     async def get_colour(self, data):
         if 0 <= data['variance'] < 16.6:
-            return 0x78B159
+            return 0x78B159 # green
         elif 16.6 <= data['variance'] < 33.3:
-            return 0xFFAC33
+            return 0xFFAC33 # yellow
         elif 33.3 <= data['variance']:
-            return 0xDD2E44
+            return 0xDD2E44 # red
+
+    async def error_embed(self, error):
+        errors = {'length': 'Your search must be more than 6 characters',
+                  'timeout': 'The server failed to fetch a result'}
+        return discord.Embed(title='Error', description=errors[error], colour=0xDD2E44)
 
 def setup(client):
     client.add_cog(Ebay(client))
