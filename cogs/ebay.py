@@ -17,41 +17,42 @@ class Ebay(commands.Cog):
     @commands.cog(aliases=['pc','chk','price','pricecheck'])
     async def check(self, ctx, *, searchTerm):
         """Gets the average price of an item from Ebay"""
-        filteredTerm, filteredWords = await self.get_filter(searchTerm)
-        page = make_soup(filteredTerm)
-        productList = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
-        products = []
-        async for i in productList:
-            p = await self.get_product_info(i)
-            products.append(p)
+        async with ctx.channel.typing()
+            filteredTerm, filteredWords = await self.get_filter(searchTerm)
+            page = make_soup(filteredTerm)
+            productList = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
+            products = []
+            async for i in productList:
+                p = await self.get_product_info(i)
+                products.append(p)
 
-        def filtered_out(title: str, filteredWords: list):
-            async for word in title.split(' '):
-                if word.lower() in filteredWords:
-                    return True
-            return False
+            def filtered_out(title: str, filteredWords: list):
+                async for word in title.split(' '):
+                    if word.lower() in filteredWords:
+                        return True
+                return False
 
-        filteredListings = [i for i in products if filtered_out(i, filteredWords) is False]
-        if len(filteredListings) == 0:
-            embed = discord.Embed(title='No results found', colour=0xE53238, description=f"No results found for {filteredTerm}")
-            fW = [i.split('-') for i in searchTerm.split(' ') if i.startswith('-')]
-            embed.add_field(name="Filtered words", value='\n'.join(fW), inline=True)
+            filteredListings = [i for i in products if filtered_out(i, filteredWords) is False]
+            if len(filteredListings) == 0:
+                embed = discord.Embed(title='No results found', colour=0xE53238, description=f"No results found for {filteredTerm}")
+                fW = [i.split('-') for i in searchTerm.split(' ') if i.startswith('-')]
+                embed.add_field(name="Filtered words", value='\n'.join(fW), inline=True)
+                await ctx.send(embed=embed)
+                return
+            quartiles = await self.find_quartiles([i['price'] for i in filteredListings])
+            # from 25th to 75th percentile
+            boxPlot = [i['price'] for i in filteredListings if quartiles[0] <= i['price'] <= quartiles [2]]
+            average = sum(boxPlot) / len(boxPlot)
+            variance = await self.determine_variance(boxPlot)
+            embedDetails = {'title': f'Results for {filteredTerm}'
+                            'range': f'{quartiles[0]} - {quartiles[2]}',
+                            'median': quartiles[1],
+                            'average': average,
+                            'variance': variance,
+                            'colour': ,
+                            'numOfItems': len(boxPlot)}
+            embed = await self.make_embed(embedDetails)
             await ctx.send(embed=embed)
-            return
-        quartiles = await self.find_quartiles([i['price'] for i in filteredListings])
-        # from 25th to 75th percentile
-        boxPlot = [i['price'] for i in filteredListings if quartiles[0] <= i['price'] <= quartiles [2]]
-        average = sum(boxPlot) / len(boxPlot)
-        variance = await self.determine_variance(boxPlot)
-        embedDetails = {'title': f'Results for {filteredTerm}'
-                        'range': f'{quartiles[0]} - {quartiles[2]}',
-                        'median': quartiles[1],
-                        'average': average,
-                        'variance': variance,
-                        'colour': ,
-                        'numOfItems': len(boxPlot)}
-        embed = await self.make_embed(embedDetails)
-        await ctx.send(embed=embed)
 
     async def make_embed(self, data:dict):
         colour = await self.get_colour(data)
