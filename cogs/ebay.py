@@ -21,7 +21,7 @@ class Ebay(commands.Cog):
             embed = await self.error_embed('length')
             await ctx.send(embed=embed)
             return
-        async with ctx.channel.typing()
+        async with ctx.channel.typing():
             filteredTerm, filteredWords = await self.get_filter(searchTerm)
             page = make_soup(filteredTerm)
             productList = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
