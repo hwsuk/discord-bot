@@ -132,7 +132,7 @@ class Ebay(commands.Cog):
         if type(logistics) is bs4.element.NavigableString:
             if logistics.lower() in ['free postage', 'postage not specified']:
                 postage = 0
-            else:
+            elif logreg.match(logistics):
                 postage = float(logreg.match(logistics).group(1))
         else:
             logistics = logistics.contents[0]
