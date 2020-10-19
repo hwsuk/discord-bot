@@ -29,7 +29,8 @@ class Ebay(commands.Cog):
             products = []
             for i in productList:
                 p = await self.get_product_info(i)
-                products.append(p)
+                if p is not None:
+                    products.append(p)
 
             def filtered_out(title: str, filteredWords: list):
                 for word in title.split(' '):
@@ -124,21 +125,24 @@ class Ebay(commands.Cog):
         return d
 
     async def parse_price(self, product):
-        logreg = re.compile('\+\s£(\d+\.\d+).*')
-        basePrice = float(product.find('span', {'class': 's-item__price'}).contents[0].contents[0].strip('£').replace(',',''))
-        if product.find('span', {'class': 's-item__logisticsCost'}) is None:
-            return basePrice
-        logistics = product.find('span', {'class': 's-item__logisticsCost'}).contents[0]
-        if type(logistics) is bs4.element.NavigableString:
-            if logistics.lower() in ['free postage', 'postage not specified']:
-                postage = 0
-            elif logreg.match(logistics):
-                postage = float(logreg.match(logistics).group(1))
-        else:
-            logistics = logistics.contents[0]
-            if logreg.match(logistics):
-                postage = float(logreg.match(logistics).group(1))
-        return basePrice + postage
+        try:
+            logreg = re.compile('\+\s£(\d+\.\d+).*')
+            basePrice = float(product.find('span', {'class': 's-item__price'}).contents[0].contents[0].strip('£').replace(',',''))
+            if product.find('span', {'class': 's-item__logisticsCost'}) is None:
+                return basePrice
+            logistics = product.find('span', {'class': 's-item__logisticsCost'}).contents[0]
+            if type(logistics) is bs4.element.NavigableString:
+                if logistics.lower() in ['free postage', 'postage not specified']:
+                    postage = 0
+                elif logreg.match(logistics):
+                    postage = float(logreg.match(logistics).group(1))
+            else:
+                logistics = logistics.contents[0]
+                if logreg.match(logistics):
+                    postage = float(logreg.match(logistics).group(1))
+            return basePrice + postage
+        except:
+            return None
 
     async def parse_date(self, product):
         base = product.find('span', {'class': 's-item__ended-date'}).contents[0]
