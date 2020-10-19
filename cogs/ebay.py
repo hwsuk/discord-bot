@@ -37,7 +37,7 @@ class Ebay(commands.Cog):
                         return True
                 return False
 
-            filteredListings = [i for i in products if filtered_out(i, filteredWords) is False]
+            filteredListings = [i for i in products if filtered_out(i['title'], filteredWords) is False]
             if len(filteredListings) == 0:
                 embed = discord.Embed(title='No results found', colour=0xE53238, description=f"No results found for {filteredTerm}")
                 fW = [i.split('-') for i in searchTerm.split(' ') if i.startswith('-')]
