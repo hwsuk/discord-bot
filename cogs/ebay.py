@@ -66,9 +66,9 @@ class Ebay(commands.Cog):
         def price(num):
             return '%.2f' % num if num == int(num) or num < 1 else int(num)
         embed = discord.Embed(title=data['title'], colour=colour)
-        embed.add_field(name='Range', value=f"£{'%.2f' % quartiles[0]} - £{'%.2f' % quartiles[2]}", inline=True)
-        embed.add_field(name='Median', value=f"£{'%.2f' % data['median']}", inline=True)
-        embed.add_field(name='Average', value=f"£{'%.2f' % data['average']}", inline=True)
+        embed.add_field(name='Range', value=f"£{price(data['range'][0])} - £{price(data['range'][1])}", inline=True)
+        embed.add_field(name='Median', value=f"£{price(data['median'])}", inline=True)
+        embed.add_field(name='Average', value=f"£{price(data['average'])}", inline=True)
         embed.add_field(name='Variance', value=f"{data['variance']}%", inline=True)
         embed.add_field(name='Number of items', value=data['numOfItems'], inline=True)
         if data['filteredWords'] != []:
