@@ -162,7 +162,7 @@ class Ebay(commands.Cog):
         time = base.split(' ')[1]
         hour = int(time.split(':')[0])
         minute = int(time.split(':')[1])
-        return datetime.datetime(year=datetime.datetime.now().year, month=month, hour=hour, minute=minute)
+        return datetime.datetime(year=datetime.datetime.now().year, month=month, day=day, hour=hour, minute=minute)
 
     async def find_quartile_postions(self, size: int):
         if size == 1:
