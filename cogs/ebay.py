@@ -52,7 +52,7 @@ class Ebay(commands.Cog):
             average = sum(boxPlot) / len(boxPlot)
             variance = await self.determine_variance(boxPlot)
             embedDetails = {"title": f"Results for {filteredTerm}",
-                            "range": f"£{quartiles[0]} - £{quartiles[2]}",
+                            "range": [quartiles[0], quartiles[2]],
                             "median": quartiles[1],
                             "average": average,
                             "variance": variance,
@@ -63,11 +63,13 @@ class Ebay(commands.Cog):
 
     async def make_embed(self, data:dict):
         colour = await self.get_colour(data)
+        def price(num):
+            return '%.2f' % num if num == int(num) or num < 1 else int(num)
         embed = discord.Embed(title=data['title'], colour=colour)
-        embed.add_field(name='Range', value=data['range'], inline=True)
-        embed.add_field(name='Median', value=f"£{data['median']}", inline=True)
-        embed.add_field(name='Average', value=f"£{round(data['average'], 2)}", inline=True)
-        embed.add_field(name='variance', value=f"{data['variance']}%", inline=True)
+        embed.add_field(name='Range', value=f"£{'%.2f' % quartiles[0]} - £{'%.2f' % quartiles[2]}", inline=True)
+        embed.add_field(name='Median', value=f"£{'%.2f' % data['median']}", inline=True)
+        embed.add_field(name='Average', value=f"£{'%.2f' % data['average']}", inline=True)
+        embed.add_field(name='Variance', value=f"{data['variance']}%", inline=True)
         embed.add_field(name='Number of items', value=data['numOfItems'], inline=True)
         if data['filteredWords'] != []:
             embed.add_field(name="Filtered words", value='\n'.join(data['filteredWords']), inline=False)
@@ -153,7 +155,7 @@ class Ebay(commands.Cog):
         time = base.split(' ')[1]
         hour = int(time.split(':')[0])
         minute = int(time.split(':')[1])
-        return {'day': day, 'month': month, 'hour': hour, 'minute': minute}
+        return datetime.datetime(year=datetime.datetime.now().year, month=month, hour=hour, minute=minute)
 
     async def find_quartile_postions(self, size: int):
         if size == 1:
