@@ -41,8 +41,9 @@ class Ebay(commands.Cog):
             filteredListings = [i for i in products if filtered_out(i['title'], filteredWords) is False]
             if len(filteredListings) == 0:
                 embed = discord.Embed(title='No results found', colour=0xE53238, description=f"No results found for {filteredTerm}")
-                fW = [i.split('-') for i in searchTerm.split(' ') if i.startswith('-')]
-                embed.add_field(name="Filtered words", value='\n'.join(fW), inline=True)
+                fW = [i[1:] for i in searchTerm.split(' ') if i.startswith('-')]
+                if len(fW) > 0:
+                    embed.add_field(name="Filtered words", value='\n'.join(fW), inline=True)
                 await ctx.send(embed=embed)
                 return
             quartiles = await self.find_quartiles([i['price'] for i in filteredListings])
