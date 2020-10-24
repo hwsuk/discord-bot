@@ -17,7 +17,11 @@ class Ebay(commands.Cog):
 
     @commands.command(aliases=['pc','chk','price','pricecheck'])
     async def check(self, ctx, *, searchTerm):
-        """Gets the average price of an item from Ebay"""
+        """Gets the average price of an item from Ebay
+        
+        Usage example:
+        !check dell xps 15 -dead -broken -scratched
+        words beginning with `-` are added to the list of words to be filtered out"""
         if len(' '.join([i for i in searchTerm.split(' ') if not i.startswith('-')])) < 6:
             embed = await self.error_embed('length')
             await ctx.send(embed=embed)
