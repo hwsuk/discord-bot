@@ -118,20 +118,18 @@ class Ebay(commands.Cog):
     async def get_product_info(self, product):
         try:
             d = {}
-            d['title'] = product.find('h3', {'class': 's-item__title'}).contents[0]
+            d['title'] = product.find('h3', {'class': 's-item__title'}).contents[-1]
             d['url'] = product.find('a')['href']
             d['image'] = product.find('img')['src']
-            d['price'] = await self. parse_price(product)
+            d['price'] = await self.parse_price(product)
             d['ended_date'] = await self.parse_date(product)
             d['id'] = d['url'].split('/')[-1].split('?')[0]
-            if [type(d[i]) for i in d.keys()] != [str, str, str, float, dict, str]:
-                return None
-            return d
+            return {'title': str(d['title']), 'url': str(d['url']), 'image': str(d['image']), 'price': d['price'], 'ended_date': d['ended_date'], 'id': str(d['id'])}
         except:
             return None
 
     async def parse_price(self, product):
-        logreg = re.compile('\+\s£(\d+\.\d+).*')
+        logReg = re.compile('\+\s£(\d+\.\d+).*')
         basePrice = float(product.find('span', {'class': 's-item__price'}).contents[0].contents[0].strip('£').replace(',',''))
         if product.find('span', {'class': 's-item__logisticsCost'}) is None:
             return basePrice
@@ -139,12 +137,12 @@ class Ebay(commands.Cog):
         if type(logistics) is bs4.element.NavigableString:
             if logistics.lower() in ['free postage', 'postage not specified']:
                 postage = 0
-            elif logreg.match(logistics):
-                postage = float(logreg.match(logistics).group(1))
+            elif logReg.match(logistics):
+                postage = float(logReg.match(logistics).group(1))
         else:
             logistics = logistics.contents[0]
-            if logreg.match(logistics):
-                postage = float(logreg.match(logistics).group(1))
+            if logReg.match(logistics):
+                postage = float(logReg.match(logistics).group(1))
         return basePrice + postage
 
     async def parse_date(self, product):
@@ -153,7 +151,9 @@ class Ebay(commands.Cog):
         months = {datetime.date(2020, i, 1).strftime('%B')[:3]: i for i in range(1,13)}
         month = months[base.split('-')[1].split(' ')[0]]
         time = base.split(' ')[1]
-        return {'day': day, 'month': month, 'time': time}
+        hour = int(time.split(':')[0])
+        minute = int(time.split(':')[1])
+        return {'day': day, 'month': month, 'hour': hour, 'minute': minute}
 
     async def find_quartile_postions(self, size: int):
         if size == 1:
