@@ -54,7 +54,7 @@ class Notes(commands.Cog):
             return
 
         index = {'min': 0, 'current': 0, 'max': len(notes) - 1}
-        embed = await self.make_note_embed(notes=notes, index=index, colour=ctx.guild.me.colour, user=user)
+        embed = await self.make_note_embed(notes=notes, index=index, colour=ctx.guild.me.colour)
         messageObject = await ctx.send(embed=embed)
         allowedEmojis = await self.add_buttons(ctx, messageObject, index)
 
