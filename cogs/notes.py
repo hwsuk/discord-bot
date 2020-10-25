@@ -158,7 +158,7 @@ class Notes(commands.Cog):
             await ctx.send("Couldn't add the note to the database for some reason. Please consult the logs for more details")
 
     async def edit_result(self, ctx, notes, index, messageObject):
-        embed = await self.make_note_embed(notes=notes, colour=ctx.guild.me.colour)
+        embed = await self.make_note_embed(notes=notes, index=index, colour=ctx.guild.me.colour)
         await messageObject.edit(embed=embed)
         allowedEmojis = await self.add_buttons(ctx, messageObject, index) # add buttons and get allowedEmojis
 
