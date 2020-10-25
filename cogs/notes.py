@@ -7,6 +7,7 @@ from discord.ext.commands import has_permissions, CheckFailure
 import config
 import re
 import motor.motor_asyncio
+import time
 from datetime import datetime as dt
 import random
 import string
@@ -40,16 +41,9 @@ class Notes(commands.Cog):
 
     @notes.command()
     @has_permissions(manage_roles=True)
-    async def view(self, ctx, user):
+    async def view(self, ctx, user:discord.Member):
         """View notes for a user"""
-        if user.isdigit() and len(user) == 18:
-            pass
-        elif len(ctx.message.mentions) == 0:
-            await ctx.send(embed=discord.Embed(title='You need to mention a user!', colour=ctx.guild.me.colour))
-            return
-        else:
-            user = str(ctx.message.mentions[0].id)
-
+        user = str(user.id)
         notes = await self.get_notes(user)
         if notes == None:
             await ctx.send(embed=discord.Embed(title='No notes found for this user', colour=ctx.guild.me.colour))
@@ -140,6 +134,29 @@ class Notes(commands.Cog):
                     logging.error(f"ERROR REMOVING NOTE: {err}")
                     await ctx.send("Couldn't remove the note from the database for some reason. Please consult the logs for more details")
 
+    @notes.command(aliases=['add'])
+    @has_permissions(manage_roles=True)
+    async def create(self, ctx, user:discord.Member):
+        await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Please enter a note for {user.mention}"))
+
+        def check(m):
+            return m.channel == ctx.channel and m.author == ctx.author
+
+        msg = await self.client.wait_for('message', check=check)
+        note = {'user': str(user.id),
+        'content': msg,
+        'added_by': str(ctx.author.id),
+        'hash': await self.gen_hash(),
+        'date_added': int(time.time())}
+        try:
+            await db.notes.insert_one(note)
+            logging.info(f"Added user note {hash} to the database")
+            embed = await self.make_note_embed(notes=[note], colour=ctx.guild.me.colour)
+            await ctx.send(content="Saved note successfully 🤠", embed=embed)
+        except Exception as err:
+            logging.error(f"ERROR ADDING NOTE: {err}")
+            await ctx.send("Couldn't add the note to the database for some reason. Please consult the logs for more details")
+
     async def edit_result(self, ctx, notes, index, messageObject):
         embed = await self.make_note_embed(notes=notes, colour=ctx.guild.me.colour)
         await messageObject.edit(embed=embed)
@@ -168,9 +185,10 @@ class Notes(commands.Cog):
                 await self.edit_result(ctx, notes, index, messageObject)
 
     async def make_note_embed(self, notes:list=[], index:dict=None, colour:int=0):
-        note = notes[index['current']]
+        note = notes[index['current']] if index != None else notes[0]
         embed = discord.Embed(title=f"Notes for <@{note['user']}>", description=note['content'], colour=colour)
-        embed.add_field(name='Date added', value=note['date_added'], inline=True)
+        date = dt.fromtimestamp(note['date_added'])
+        embed.add_field(name='Date added', value=f"{date.day}/{date.month}/{date.year}", inline=True)
         embed.add_field(name='Added by', value=f"<@{note['added_by']}>", inline=True)
         embed.add_field(name='hash', value=f"`{note['hash']}`", inline=True)
         if index != None:
