@@ -158,16 +158,18 @@ class Ebay(commands.Cog):
         basePrice = float(product.find('span', {'class': 's-item__price'}).contents[0].contents[0].strip('£').replace(',','')) # Find the listing price
         if not product.find('span', {'class': 's-item__logisticsCost'}): # If there is no postage price return the listing price
             return basePrice
-        logistics = product.find('span', {'class': 's-item__logisticsCost'}).contents[0] 
+        logistics = product.find('span', {'class': 's-item__logisticsCost'}).contents[0]
         if type(logistics) is bs4.element.NavigableString:
-            if logistics.lower() in ['free postage', 'postage not specified']:
+            if logistics.lower() in ['free postage', 'postage not specified']: # Ignore common strings
                 postage = 0
-            elif logReg.match(logistics):
+            elif logReg.match(logistics): # Find the price if there's a regex match
                 postage = float(logReg.match(logistics).group(1))
-        else: # If 
-            logistics = logistics.contents[0]
-            if logReg.match(logistics):
+        else: # If type is not NavigableString (most likely to be Tag)
+            logistics = logistics.contents[-1]
+            if logReg.match(logistics): # Apply regex
                 postage = float(logReg.match(logistics).group(1))
+            else: # Account for edge cases
+                postage = 0
         return basePrice + postage
 
     async def parse_date(self, product):
