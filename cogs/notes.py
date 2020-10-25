@@ -49,7 +49,8 @@ class Notes(commands.Cog):
         user = str(user.id)
         notes = await self.get_notes(user)
         if notes == None:
-            await ctx.send(embed=discord.Embed(title='No notes found for this user', colour=ctx.guild.me.colour))
+            embed = discord.Embed(description="❌ No notes found for this user", colour=ctx.guild.me.colour)
+            await ctx.send(embed=embed)
             return
         elif len(notes) == 1:
             embed = await self.make_note_embed(notes=notes, colour=ctx.guild.me.colour)
@@ -102,7 +103,7 @@ class Notes(commands.Cog):
         data = await db.notes.find_one({"hash": hash})
         if data is None:
             embed = discord.Embed(description="❌ No note found with this hash", colour=ctx.guild.me.colour)
-            await ctx.send(embed=discord.Embed(title='', colour=ctx.guild.me.colour))
+            await ctx.send(embed=embed)
             return
         embed = await self.make_note_embed(notes=[data], colour=ctx.guild.me.colour)
         await ctx.send(embed=embed)
@@ -163,6 +164,7 @@ class Notes(commands.Cog):
 
 # Helper functions
 
+    # Used for pagination in view command
     async def edit_result(self, ctx, notes, index, messageObject):
         embed = await self.make_note_embed(notes=notes, index=index, colour=ctx.guild.me.colour)
         await messageObject.edit(embed=embed)
@@ -202,6 +204,7 @@ class Notes(commands.Cog):
             embed.set_footer(text=f"{index['current'] + 1} of {index['max'] + 1}")
         return embed
 
+    # Used for pagination in view command
     async def add_buttons(self, ctx, messageObject, index):
         messageObject = await messageObject.channel.fetch_message(messageObject.id)
         oldReacts = []
