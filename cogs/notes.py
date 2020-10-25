@@ -144,7 +144,7 @@ class Notes(commands.Cog):
 
         msg = await self.client.wait_for('message', check=check)
         note = {'user': str(user.id),
-        'content': msg,
+        'content': msg.content,
         'added_by': str(ctx.author.id),
         'hash': await self.gen_hash(),
         'date_added': int(time.time())}
