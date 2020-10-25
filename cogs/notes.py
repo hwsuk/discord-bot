@@ -85,7 +85,7 @@ class Notes(commands.Cog):
         if data is None:
             await ctx.send(embed=discord.Embed(title='No note found with this hash', colour=ctx.guild.me.colour))
             return
-        embed = await self.make_note_embed(notes=[note], colour=ctx.guild.me.colour)
+        embed = await self.make_note_embed(notes=[data], colour=ctx.guild.me.colour)
         await ctx.send(embed=embed)
 
     @notes.command(aliases=['remove'])
@@ -219,7 +219,7 @@ class Notes(commands.Cog):
         return allowedEmojis
 
     async def get_notes(self, user):
-        data = await db.notes.find({"user_id": str(user)})
+        data = db.notes.find({"user_id": str(user)})
         if data is None:
             return None
 
