@@ -3,7 +3,9 @@
         "feedback",
         "verify",
         "cex",
-        "limiter"
+        "limiter",
+        "ebay",
+        "notes"
     ],
     "flairs": {
         "3+": {
