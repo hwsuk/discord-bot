@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s]\t %(name)s: %(m
 def to_lower(word: str):
     return word.lower()
 
-class Feedback(commands.Cog):
+class Notes(commands.Cog):
 
     def __init__(self, client):
         self.client = client
@@ -167,14 +167,14 @@ class Feedback(commands.Cog):
                 await messageObject.remove_reaction(reaction.emoji, ctx.author)
                 await self.edit_result(ctx, notes, index, messageObject)
 
-    async def make_note_embed(self, notes:list, index:dict=None, colour:int):
+    async def make_note_embed(self, notes:list=[], index:dict=None, colour:int=0):
         note = notes[index['current']]
-        embed = discord.Embed(title=f'Notes for <@{note['user']}>', description=note['content'], colour=colour)
+        embed = discord.Embed(title=f"Notes for <@{note['user']}>", description=note['content'], colour=colour)
         embed.add_field(name='Date added', value=note['date_added'], inline=True)
-        embed.add_field(name='Added by', value=f'<@{note['added_by']}>', inline=True)
-        embed.add_field(name='hash', value=f'`{note['hash']}`', inline=True)
-        if index != None
-            embed.set_footer(text=f'{index['current']} of {index['max'] + 1}')
+        embed.add_field(name='Added by', value=f"<@{note['added_by']}>", inline=True)
+        embed.add_field(name='hash', value=f"`{note['hash']}`", inline=True)
+        if index != None:
+            embed.set_footer(text=f"{index['current']} of {index['max'] + 1}")
         return embed
 
     async def add_buttons(self, ctx, messageObject, index):
