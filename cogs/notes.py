@@ -193,7 +193,7 @@ class Notes(commands.Cog):
         embed.add_field(name='Added by', value=f"<@{note['added_by']}>", inline=True)
         embed.add_field(name='Hash', value=f"`{note['hash']}`", inline=True)
         if index != None:
-            embed.set_footer(text=f"{index['current']} of {index['max'] + 1}")
+            embed.set_footer(text=f"{index['current'] + 1} of {index['max'] + 1}")
         return embed
 
     async def add_buttons(self, ctx, messageObject, index):
