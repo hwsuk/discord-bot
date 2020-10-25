@@ -142,6 +142,7 @@ class Notes(commands.Cog):
     @notes.command(aliases=['add', 'new'])
     @has_permissions(manage_roles=True)
     async def create(self, ctx, user:discord.Member):
+        """Create a note about a user"""
         await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Please enter a note for {user.mention}"))
 
         def check(m):
