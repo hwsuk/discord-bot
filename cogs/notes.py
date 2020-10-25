@@ -186,11 +186,12 @@ class Notes(commands.Cog):
 
     async def make_note_embed(self, notes:list=[], index:dict=None, colour:int=0):
         note = notes[index['current']] if index != None else notes[0]
-        embed = discord.Embed(title=f"Notes for <@{note['user']}>", description=note['content'], colour=colour)
+        content = f"**Notes for <@{note['user']}>\n{note['content']}"
+        embed = discord.Embed(description=content, colour=colour)
         date = dt.fromtimestamp(note['date_added'])
-        embed.add_field(name='Date added', value=f"{date.day}/{date.month}/{date.year}", inline=True)
+        embed.add_field(name='Date Added', value=f"{date.day}/{date.month}/{date.year}", inline=True)
         embed.add_field(name='Added by', value=f"<@{note['added_by']}>", inline=True)
-        embed.add_field(name='hash', value=f"`{note['hash']}`", inline=True)
+        embed.add_field(name='Hash', value=f"`{note['hash']}`", inline=True)
         if index != None:
             embed.set_footer(text=f"{index['current']} of {index['max'] + 1}")
         return embed
