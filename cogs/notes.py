@@ -220,7 +220,7 @@ class Notes(commands.Cog):
         return allowedEmojis
 
     async def get_notes(self, user):
-        n = await db.notes.count_documents({"user_id": str(user)})
+        n = await db.notes.count_documents({"user": str(user)})
         if n == 0:
             return None
         data = db.notes.find({"user": str(user)})
