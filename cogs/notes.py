@@ -186,7 +186,7 @@ class Notes(commands.Cog):
 
     async def make_note_embed(self, notes:list=[], index:dict=None, colour:int=0):
         note = notes[index['current']] if index != None else notes[0]
-        content = f"**Notes for <@{note['user']}>\n{note['content']}"
+        content = f"**Notes for <@{note['user']}>**\n{note['content']}"
         embed = discord.Embed(description=content, colour=colour)
         date = dt.fromtimestamp(note['date_added'])
         embed.add_field(name='Date Added', value=f"{date.day}/{date.month}/{date.year}", inline=True)
@@ -220,12 +220,14 @@ class Notes(commands.Cog):
         return allowedEmojis
 
     async def get_notes(self, user):
-        data = db.notes.find({"user_id": str(user)})
-        if data is None:
+        n = await db.notes.count_documents({"user_id": str(user)})
+        if n == 0:
             return None
+        data = db.notes.find({"user": str(user)})
 
         notes = []
-        for note in await data.to_list(length=200):
+        data.limit(n)
+        async for note in data:
             notes.append(note)
         return notes
 
