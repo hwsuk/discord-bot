@@ -232,7 +232,7 @@ class Notes(commands.Cog):
         unique = False
         while unique is False:
             hash = ''.join(random.choice(string.ascii_lowercase+string.digits) for i in range(7))
-            data = await db.notes.find({'hash': hash})
+            data = await db.notes.find_one({'hash': hash})
             if data is None:
                 unique = True
         return hash
