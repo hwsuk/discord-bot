@@ -96,13 +96,14 @@ class Notes(commands.Cog):
             embed = discord.Embed(description="❌ That doesn't look like a valid note hash", colour=ctx.guild.me.colour)
             await ctx.send(embed=embed)
             return
-        data = await db.notes.find_one({'hash': hash})
+        data = await db.notes.find_one({"hash": hash})
         if data is None:
-            await ctx.send(embed=discord.Embed(title='No note found with this hash', colour=ctx.guild.me.colour))
+            embed = discord.Embed(description="❌ No note found with this hash", colour=ctx.guild.me.colour)
+            await ctx.send(embed=discord.Embed(title='', colour=ctx.guild.me.colour))
             return
-        embed = await self.make_note_embed(notes=[note], colour=ctx.guild.me.colour)
+        embed = await self.make_note_embed(notes=[data], colour=ctx.guild.me.colour)
         await ctx.send(embed=embed)
-        messageObject = await ctx.send('Are you sure you want to remove this user from the database?')
+        messageObject = await ctx.send('Are you sure you want to remove this note from the database?')
         emojis = ['✅', '❌']
         for i in emojis:
             await messageObject.add_reaction(i)
