@@ -33,9 +33,12 @@ class Notes(commands.Cog):
     async def on_ready(self):
         print('Feedback cog online')
 
+# Commands
+
     @commands.group()
     @has_permissions(manage_roles=True)
     async def notes(self, ctx):
+        """View moderator notes about users"""
         if ctx.invoked_subcommand is None:
             pass
 
@@ -135,7 +138,7 @@ class Notes(commands.Cog):
                     logging.error(f"ERROR REMOVING NOTE: {err}")
                     await ctx.send("Couldn't remove the note from the database for some reason. Please consult the logs for more details")
 
-    @notes.command(aliases=['add'])
+    @notes.command(aliases=['add', 'new'])
     @has_permissions(manage_roles=True)
     async def create(self, ctx, user:discord.Member):
         await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Please enter a note for {user.mention}"))
@@ -157,6 +160,8 @@ class Notes(commands.Cog):
         except Exception as err:
             logging.error(f"ERROR ADDING NOTE: {err}")
             await ctx.send("Couldn't add the note to the database for some reason. Please consult the logs for more details")
+
+# Helper functions
 
     async def edit_result(self, ctx, notes, index, messageObject):
         embed = await self.make_note_embed(notes=notes, index=index, colour=ctx.guild.me.colour)
@@ -220,6 +225,7 @@ class Notes(commands.Cog):
                 await messageObject.add_reaction(emoji)
         return allowedEmojis
 
+    # Used in view command
     async def get_notes(self, user):
         n = await db.notes.count_documents({"user": str(user)})
         if n == 0:
@@ -232,6 +238,7 @@ class Notes(commands.Cog):
             notes.append(note)
         return notes
 
+    # Used in create command
     async def gen_hash(self):
         unique = False
         while unique is False:
