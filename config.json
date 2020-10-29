@@ -4,7 +4,8 @@
         "verify",
         "cex",
         "limiter",
-        "ebay"
+        "ebay",
+        "notes"
     ],
     "flairs": {
         "3+": {
