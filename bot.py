@@ -9,7 +9,7 @@ import sys
 with open('config.json', 'r') as f:
     conf = json.load(f)
 
-logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s]\t %(name)s: %(message)s", handlers=[
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s]\t %(name)s: %(message)s", handlers=[
     logging.StreamHandler(sys.stdout),
     logging.FileHandler(f'./logs/{config.LOGGING_FILENAME}')
 ])
