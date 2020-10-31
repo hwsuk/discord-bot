@@ -5,7 +5,6 @@ import bs4
 from bs4 import BeautifulSoup as soup
 import datetime
 import re
-import urllib.parse
 import math
 
 headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
@@ -96,8 +95,8 @@ class Ebay(commands.Cog):
 
     async def make_soup(self, searchTerm):
         """Returns a BeautifulSoup object from an ebay search"""
-        cleanSearchTerm = urllib.parse.quote(searchTerm) # clean up the search term for the url
-        url = f"https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw={searchTerm}&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=200"
+        cleanSearchTerm = '+'.join(searchTerm.lower().split()) # clean up the search term for the url
+        url = f"https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw={cleanSearchTerm}&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=200&LH_ItemCondition=4&LH_PrefLoc=1"
         async with aiohttp.ClientSession() as session:
             data = await session.get(url, headers=headers)
             pageText = await data.text()
@@ -145,6 +144,8 @@ class Ebay(commands.Cog):
             d['url'] = product.find('a')['href']
             d['image'] = product.find('img')['src']
             d['price'] = await self.parse_price(product)
+            if not d['price']: # If £ not in price
+                return None
             d['ended_date'] = await self.parse_date(product)
             d['id'] = d['url'].split('/')[-1].split('?')[0]
             # Type enforcement on dictionary object
@@ -155,6 +156,9 @@ class Ebay(commands.Cog):
     async def parse_price(self, product):
         """Retrieves the full price from a product listing"""
         logReg = re.compile('\+\s£(\d+\.\d+).*')
+        basePrice = product.find('span', {'class': 's-item__price'}).contents[0].contents[0]
+        if '£' not in basePrice: # Ignore foreign listings
+            return None
         basePrice = float(product.find('span', {'class': 's-item__price'}).contents[0].contents[0].strip('£').replace(',','')) # Find the listing price
         if not product.find('span', {'class': 's-item__logisticsCost'}): # If there is no postage price return the listing price
             return basePrice
@@ -164,6 +168,8 @@ class Ebay(commands.Cog):
                 postage = 0
             elif logReg.match(logistics): # Find the price if there's a regex match
                 postage = float(logReg.match(logistics).group(1))
+            else:
+                postage = 0
         else: # If type is not NavigableString (most likely to be Tag)
             logistics = logistics.contents[-1]
             if logReg.match(logistics): # Apply regex
