@@ -95,8 +95,7 @@ class Ebay(commands.Cog):
 
     async def make_soup(self, searchTerm):
         """Returns a BeautifulSoup object from an ebay search"""
-        cleanSearchTerm = '+'.join(searchTerm.lower().split()) # clean up the search term for the url
-        url = f"https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw={cleanSearchTerm}&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=200&LH_ItemCondition=4&LH_PrefLoc=1"
+        url = f"https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw={searchTerm.lower()}&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=200&LH_ItemCondition=4&LH_PrefLoc=1"
         async with aiohttp.ClientSession() as session:
             data = await session.get(url, headers=headers)
             pageText = await data.text()
