@@ -21,6 +21,7 @@ class Ebay(commands.Cog):
         Usage example:
         !check dell xps 15 -dead -broken -scratched
         words beginning with `-` are added to the list of words to be filtered out"""
+        searchTerm = searchTerm.lower()
         # If the searchterm with boolean operators removed is less than 6 characters
         if len(' '.join([i for i in searchTerm.split(' ') if not i.startswith('-')])) < 6:
             embed = await self.error_embed('length')
@@ -95,7 +96,7 @@ class Ebay(commands.Cog):
 
     async def make_soup(self, searchTerm):
         """Returns a BeautifulSoup object from an ebay search"""
-        url = f"https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw={searchTerm.lower()}&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=200&LH_ItemCondition=4&LH_PrefLoc=1"
+        url = f"https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw={searchTerm}&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=200&LH_ItemCondition=4&LH_PrefLoc=1"
         async with aiohttp.ClientSession() as session:
             data = await session.get(url, headers=headers)
             pageText = await data.text()
