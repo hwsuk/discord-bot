@@ -12,8 +12,8 @@ from redbot.core.utils.menus import menu, prev_page, next_page
 CUSTOM_CONTROLS = {"⬅️": prev_page, "➡️": next_page}
 
 cex_red = 0xff0000
-cexLogo = 'https://uk.webuy.com/_nuxt/74714aa39f40304c8fac8e7520cc0a35.png'
-cexEmoji = '<:cex:292749632025657354>'
+cex_logo = 'https://uk.webuy.com/_nuxt/74714aa39f40304c8fac8e7520cc0a35.png'
+
 # Search item aliases
 D = {
     'bI'    :   'boxId',
@@ -47,7 +47,7 @@ class Cex(commands.Cog):
         print('Cex search cog online')
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         # we do not want the bot to reply to itself or other bots
         if message.author.bot == True or message.author.id == self.client.user.id:
             return
@@ -59,40 +59,28 @@ class Cex(commands.Cog):
                 if parse.parse_qs(parse.urlsplit(word).query)['id'] == {}:
                     continue
                 try:
-                    productId = parse.parse_qs(parse.urlsplit(word).query)['id'][0]
+                    product_id = parse.parse_qs(parse.urlsplit(word).query)['id'][0]
                 except KeyError:
                     continue
-                cex_search = await self.cex_search(productId)
-                if cex_search is None:
+                cex_search = await self.cex_search(product_id)
+                if not cex_search: # If no results
                     continue
-                cex_search = cex_search['boxes'][0]
-                newEmbed = self.make_cex_embed(cex_search)
+                new_embed = self.make_cex_embed(cex_search[0])
                 await message.edit(suppress=True)
-                await message.channel.send(embed=newEmbed)
+                await message.channel.send(embed=new_embed)
 
 # Commands
 
     @commands.command()
     async def search(self, ctx, *, search_term: str):
-        """Searches the CeX website"""
+        """Search the CeX website"""
         # Prepare and sanitise the search arguments
-        index = {}
-        indexReg = re.compile("r=([0-9]+)")
-        # Check for an index modifier argument ([p]search product r=3)
-        if indexReg.match(search_term[-1]):
-            match = indexReg.match(search_term[-1])
-            index['current'] = int(match.group(1)) - 1
-            search_term = search_term[:-1]
-        else:
-            index['current'] = 0
-        search_term = " ".join(search_term)
+        index, search_term = self.get_index(search_term)
         cex_search = await self.cex_search(search_term) # Get products
 
         if not cex_search: # If no results for that search term
             await self.no_results(ctx, search_term)
             return
-        else:
-            cex_search = cex_search['boxes']
 
         if len(cex_search) == 1: # If only one result
             index = {
@@ -106,7 +94,6 @@ class Cex(commands.Cog):
         # Check that the current index, if modified, is within range
         if not 0 <= index['current'] < len(cex_search) - 1:
             index = {
-                'min': 0,
                 'current': index['current'],
                 'max': len(cex_search) - 1
             }
@@ -117,7 +104,7 @@ class Cex(commands.Cog):
 
     # Helper functions
 
-    async def cex_search(self, search_term: str) -> tuple:
+    async def cex_search(self, search_term: str) -> tuple[dict]:
         """Retrieve search data"""
         headers = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
@@ -164,9 +151,24 @@ class Cex(commands.Cog):
         return embed
 
     async def no_results(self, ctx, search_term: str):
-        embed = discord.Embed(colour=cex_red, description="No products found for `{search_term}`")
-        embed.set_author(name="No results 🙁", icon_url=cexLogo)
+        embed = discord.Embed(colour=cex_red, description=f"No products found for `{search_term.replace('`', '``')}`")
+        embed.set_author(name="No results 🙁", icon_url=cex_logo)
         await ctx.send(embed=embed)
+
+    def get_index(search_term: str) -> tuple[dict, str]:
+        """Get index for search command"""
+        index = {}
+        index_reg = re.compile("r=([0-9]+)")
+        # Check for an index modifier argument ([p]search product r=3)
+        if index_reg.match(search_term.split()[-1]):
+            search_term = search_term.split()
+            match = index_reg.match(search_term[-1])
+            del search_term[-1]
+            index['current'] = int(match.group(1)) - 1
+            search_term = " ".join(search_term)
+        else:
+            index['current'] = 0
+        return index, search_term
 
 def setup(client):
     client.add_cog(Cex(client))
