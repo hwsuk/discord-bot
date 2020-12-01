@@ -83,11 +83,7 @@ class Cex(commands.Cog):
             return
 
         if len(cex_search) == 1: # If only one result
-            index = {
-                'current': 0,
-                'max': 0
-            }
-            cex_embed = self.make_cex_embed(cex_search[index['current']], index)
+            cex_embed = self.make_cex_embed(cex_search[0], {'current': 0, 'max': 0})
             await ctx.send(embed=cex_embed)
             return
 
