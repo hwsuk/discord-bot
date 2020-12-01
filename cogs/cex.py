@@ -111,7 +111,7 @@ class Cex(commands.Cog):
                 'max': len(cex_search) - 1
             }
 
-        cex_embeds = [self.make_cex_embed(cex_search[i], {''}) for i in range(len(cex_search))]
+        cex_embeds = [self.make_cex_embed(cex_search[i], {'current': i, 'max': len(cex_search) - 1}) for i in range(len(cex_search))]
         message = f"<https://uk.webuy.com/search/index.php?stext={urllib.parse.quote(search_term)}&categoryID=&is=0>"
         await menu(ctx, pages=cex_embeds, controls=CUSTOM_CONTROLS, message=message, page=index['current'], timeout=180)
 
