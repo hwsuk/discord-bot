@@ -43,4 +43,6 @@ BUY_SELL_CHANNEL_ID = int(get_env("BUY_SELL_CHANNEL_ID", required=True))
 BUY_SELL_LIMIT_SECONDS = int(get_env("BUY_SELL_LIMIT_SECONDS", or_else=259200))
 BUY_SELL_BACKUP_DM_CHANNEL_ID = int(get_env("BUY_SELL_BACKUP_DM_CHANNEL_ID", or_else=292032782409007115))
 
+DVLA_API_KEY = get_env("DVLA_API_KEY", required=True)
+
 LOGGING_FILENAME = get_env("LOGGING_FILENAME", or_else=f'bot-{datetime.now().strftime("%m-%d-%Y-%H%M%S")}.log')
