@@ -1,12 +1,10 @@
-import asyncio
-import json
 import aiohttp
 import discord
 from discord.ext import commands
-import time
 import urllib.parse
 from urllib import parse
 import re
+from typing import Tuple
 from redbot.core.utils.menus import menu, prev_page, next_page
 
 CUSTOM_CONTROLS = {"⬅️": prev_page, "➡️": next_page}
@@ -100,7 +98,7 @@ class Cex(commands.Cog):
 
     # Helper functions
 
-    async def cex_search(self, search_term: str) -> tuple[dict]:
+    async def cex_search(self, search_term: str) -> Tuple[dict]:
         """Retrieve search data"""
         headers = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
@@ -151,7 +149,7 @@ class Cex(commands.Cog):
         embed.set_author(name="No results 🙁", icon_url=cex_logo)
         await ctx.send(embed=embed)
 
-    def get_index(search_term: str) -> tuple[dict, str]:
+    def get_index(search_term: str) -> Tuple[dict, str]:
         """Get index for search command"""
         index = {}
         index_reg = re.compile("r=([0-9]+)")
