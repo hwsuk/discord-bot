@@ -47,11 +47,11 @@ class Vehicle:
         self.model = data['model'].capitalize()
         self.fuel_type = data['fuelType']
         self.colour = data['primaryColour']
-        self.tests = tuple([MotTest(i) for i in data['motTests']])
+        self.tests = tuple([MotTest(i) for i in data['motTests']]) if 'motTests' in data else tuple([])
         if self.tests:
             self.embeds = tuple([self.make_embed(i) for i in range(len(self.tests))])
         else:
-            self.mot_expiry_date = data['motTestExpiryDate']
+            self.mot_expiry_date = dt.strptime(data['motTestExpiryDate'], '%Y-%m-%d')
             self.embeds = tuple([self.make_basic_embed()])
 
     def make_basic_embed(self):
