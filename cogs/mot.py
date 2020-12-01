@@ -95,6 +95,14 @@ class MOT(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+# Events
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print('MOT search cog online')
+
+# Commands
+
     @commands.command(name='mot')
     async def _mot(self, ctx, registration: str, year: int = 0):
         vehicle = await get_vehicle(registration)
