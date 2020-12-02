@@ -128,9 +128,8 @@ class Notes(commands.Cog):
     @has_permissions(manage_roles=True)
     async def create(self, ctx, user: discord.Member, *, note_content: str = ''):
         """Create a note about a user"""
-        await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Please enter a note for {user.mention}"))
-
         if not note_content:
+            await ctx.send(embed=discord.Embed(colour=ctx.guild.me.colour, description=f"Please enter a note for {user.mention}"))
             def check(m):
                 return m.channel == ctx.channel and m.author == ctx.author
 
