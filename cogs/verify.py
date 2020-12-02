@@ -39,17 +39,20 @@ class Verify(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print('Verify cog online')
-        # First we check the queue for any old additions
-        backlog = await db.queue.find({}).to_list(None)
-        if backlog:
-            logging.debug('Catching up')
-            for item in backlog:
-                user = await db.users.find_one({"_id": item["ref"]})
-                if user["verified"]:
-                    await self.set_verified(user['discord']['id'])
-                else:
-                    logging.warning(f'Weird, {item["ref"]} was in the queue but is not verified.')
-                await db.queue.find_one_and_delete({"_id": item['_id']})
+        try:
+            n = await db.queue.count_documents({})
+            if n == 0:
+                return
+            data = db.queue.find()
+            data.limit(n)
+            async for document in data:
+                user = await db.users.find_one({"_id": document['ref']})
+                await self.set_verified(user['discord']['id'])
+                await db.queue.find_one_and_delete({'_id': document['_id']})
+                logging.info(f'Verified user: {user}')
+        except Exception as err:
+            logging.error(f'ERROR MONITORING DB: {err}')
+
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -369,9 +372,10 @@ class Verify(commands.Cog):
             data = db.queue.find()
             data.limit(n)
             async for document in data:
-                await self.set_verified(document['discord']['id'])
+                user = await db.users.find_one({"_id": document['ref']})
+                await self.set_verified(user['discord']['id'])
                 await db.queue.find_one_and_delete({'_id': document['_id']})
-                logging.info(f'Verified user: {document}')
+                logging.info(f'Verified user: {user}')
         except Exception as err:
             logging.error(f'ERROR MONITORING DB: {err}')
 
