@@ -121,7 +121,7 @@ class Cex(commands.Cog):
         we_buy_cash = "£{:,.2f}".format(float(search_object[D['cP']]))
         # Construct embed
         embed = discord.Embed(colour=discord.Colour(cex_red), url="https://uk.webuy.com/product-detail/?id="+search_object[D['bI']])
-        embed.set_author(name=search_object[D['bN']], url="https://uk.webuy.com/product-detail?id="+search_object[D['bI']], icon_url=cexLogo)
+        embed.set_author(name=search_object[D['bN']], url="https://uk.webuy.com/product-detail?id="+search_object[D['bI']], icon_url=cex_logo)
         embed.set_thumbnail(url=search_object['imageUrls']['large'].replace(" ", "%20")) # cleans up the URL
         embed.add_field(name="WeSell for", value=we_sell, inline=True)
         embed.add_field(name="WeBuy for Voucher", value=we_buy_voucher, inline=True)
