@@ -74,7 +74,7 @@ class Notes(commands.Cog):
         if data is None:
             await ctx.send(embed=discord.Embed(title='No note found with this hash', colour=ctx.guild.me.colour))
             return
-        embed = self.make_note_embed(note=[data], colour=ctx.guild.me.colour)
+        embed = self.make_note_embed(note=data, colour=ctx.guild.me.colour)
         await ctx.send(embed=embed)
 
     @notes.command(aliases=['remove'])
