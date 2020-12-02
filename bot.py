@@ -24,10 +24,7 @@ intents = discord.Intents(
     dm_messages=True,
     reactions=True,
     guild_reactions=True,
-    dm_reactions=True,
-    typing=True,
-    guild_typing=True,
-    dm_typing=True
+    dm_reactions=True
 )
 client = commands.Bot(command_prefix = config.DISCORD_PREFIX, intents=intents)
 
