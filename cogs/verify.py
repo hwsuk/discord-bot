@@ -67,8 +67,7 @@ class Verify(commands.Cog):
     @commands.Cog.listener()
     async def on_member_unban(self, guild, user):
         await db.users.find_one_and_update({"discord.id": user.id}, {"banned": False})
-        logging.info(
-            f'UNBANNED {user.name + "#" + user.discriminator} ON {guild.name}')
+        logging.info(f'UNBANNED {user.name}#{user.discriminator} ON {guild.name}')
 
     # Commands
 
@@ -354,7 +353,8 @@ class Verify(commands.Cog):
             return True
         except Exception as err:
             logging.error(
-                f"ERROR ADDING ROLE FOR {member.name}#{member.discriminator} IN {server.name}: {err}")
+                f"ERROR ADDING ROLE FOR {member.name}#{member.discriminator} IN {server.name}: {err}"
+            )
             return False
 
     # Tasks
@@ -363,17 +363,17 @@ class Verify(commands.Cog):
     async def monitor_db(self):
         """Monitor DB for changes"""
         try:
-            logging.info("Monitoring DB")
-            async for change in db.queue.watch():
-                if change["operationType"] == "insert":
-                    user = await db.users.find_one({"_id": change["fullDocument"]["ref"]})
-                    if user.get("verified"):
-                        await self.set_verified(user['discord']['id'])
-                        await db.queue.find_one_and_delete({"_id": change["fullDocument"]['_id']})
-        except Exception as e:
-            logging.error(f'ERROR MONITORING DB: {e}')
-            logging.warning('WAITING BEFORE TRYING AGAIN')
-            time.sleep(5)
+            n = await db.queue.count_documents({})
+            if n == 0:
+                return
+            data = db.queue.find()
+            data.limit(n)
+            async for document in data:
+                await self.set_verified(document['discord']['id'])
+                await db.queue.find_one_and_delete({'_id': document['_id']})
+                logging.info(f'Verified user: {document}')
+        except Exception as err:
+            logging.error(f'ERROR MONITORING DB: {err}')
 
 def setup(client):
     client.add_cog(Verify(client))
