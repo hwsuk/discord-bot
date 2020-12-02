@@ -55,14 +55,14 @@ class Verify(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member: discord.Member):
         data = await db.users.find_one({"discord.id": str(member.id)})
 
         if(data and data.get("verified")):  # Check if user has verified online first
             await self.set_verified(member.id)
 
     @commands.Cog.listener()
-    async def on_member_ban(self, member):
+    async def on_member_ban(self, member: discord.Member):
         await db.users.find_one_and_update({"discord.id": member.id}, {"verified": False, "banned": True})
         logging.info(
             f'BANNED {member.name + "#" + member.discriminator} ON {member.server.name}')
@@ -84,7 +84,7 @@ class Verify(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def whois(self, ctx, user):
+    async def whois(self, ctx, user: str):
         """Search by Discord username, ID, mention or Reddit username for a verified hwsuk user"""
         # Syntax: !whois [username]
         # Examples: !whois issythegurl
@@ -105,7 +105,7 @@ class Verify(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command()
-    async def editflair(self, ctx, user, flair):
+    async def editflair(self, ctx, user: str, flair: str):
         """Edit a user's trade role/flair"""
         if int(config.DISCORD_UPDATER_ROLE) not in [i.id for i in ctx.message.author.roles]:
             desc = "Hey, looks like you don't have permission to do this!\nPlease contact a mod if you feel should have this permission"
@@ -184,7 +184,7 @@ class Verify(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='removeuser', aliases=['remove_user'])
-    async def remove_user(self, ctx, user):
+    async def remove_user(self, ctx, user: str):
         """Removes a user from the verification database"""
         if int(config.DISCORD_UPDATER_ROLE) not in [i.id for i in ctx.message.author.roles]:
             desc = "Hey, looks like you don't have permission to do this!\nPlease contact a mod if you feel should have this permission"
@@ -301,7 +301,7 @@ class Verify(commands.Cog):
         return embed
 
     # Used in for whois and editflair
-    async def get_trades(self, discord_id) -> str:
+    async def get_trades(self, discord_id: str) -> str:
         """Get the trade role of a member"""
         trade_roles = [conf['flairs'][i]['rid'] for i in conf['flairs']]
         guild = self.client.get_guild(int(config.DISCORD_SERVER_ID))
