@@ -39,13 +39,13 @@ class Verify(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print('Verify cog online')
-        #First we check the queue for any old additions if this garbage was down
+        # First we check the queue for any old additions
         backlog = await db.queue.find({}).to_list(None)
-        if(backlog):
-            logging.debug('Catching up, one sec')
+        if backlog:
+            logging.debug('Catching up')
             for item in backlog:
                 user = await db.users.find_one({"_id": item["ref"]})
-                if user.get("verified"):
+                if user["verified"]:
                     await self.set_verified(user['discord']['id'])
                 else:
                     logging.warning(f'Weird, {item["ref"]} was in the queue but is not verified.')
