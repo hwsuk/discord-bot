@@ -145,7 +145,7 @@ class Notes(commands.Cog):
         try:
             await db.notes.insert_one(note)
             logging.info(f"Added user note {note['hash']} to the database")
-            embed = self.make_note_embed(notes=note, colour=ctx.guild.me.colour)
+            embed = self.make_note_embed(note=note, colour=ctx.guild.me.colour)
             await ctx.send(content="Saved note successfully 🤠", embed=embed)
         except Exception as err:
             logging.error(f"ERROR ADDING NOTE: {err}")
