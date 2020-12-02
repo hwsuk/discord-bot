@@ -149,7 +149,7 @@ class Cex(commands.Cog):
         embed.set_author(name="No results 🙁", icon_url=cex_logo)
         await ctx.send(embed=embed)
 
-    def get_index(search_term: str) -> Tuple[dict, str]:
+    def get_index(self, search_term: str) -> Tuple[dict, str]:
         """Get index for search command"""
         index = {}
         index_reg = re.compile("r=([0-9]+)")
