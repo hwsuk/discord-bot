@@ -92,7 +92,7 @@ class Verify(commands.Cog):
         # !whois 377212919068229633
         # !whois u/issythegurl
         if len(ctx.message.mentions) == 1:
-            user_data = await self.get_user(ctx.message.mentions[0].id)
+            user_data = await self.get_user(str(ctx.message.mentions[0].id))
         else:
             user_data = await self.get_user(user)
         if not user_data:
