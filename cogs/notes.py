@@ -2,15 +2,15 @@ import discord
 import asyncio
 import sys
 import logging
-from discord.ext import commands, tasks
-from discord.ext.commands import has_permissions, CheckFailure
+from discord.ext import commands
+from discord.ext.commands import has_permissions
 import config
-import re
 import motor.motor_asyncio
 import time
 from datetime import datetime as dt
 import random
 import string
+from typing import Tuple
 from redbot.core.utils.menus import menu, prev_page, next_page
 
 CUSTOM_CONTROLS = {"⬅️": prev_page, "➡️": next_page}
@@ -165,7 +165,7 @@ class Notes(commands.Cog):
             embed.set_footer(text=f"{index['current'] + 1} of {index['max'] + 1}")
         return embed
 
-    async def get_notes(self, user_id: str) -> tuple[dict]:
+    async def get_notes(self, user_id: str) -> Tuple[dict]:
         """Retrieve notes from DB by user ID"""
         n = await db.notes.count_documents({"user": user_id})
         if n == 0:
