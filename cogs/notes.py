@@ -187,7 +187,7 @@ class Notes(commands.Cog):
             if not data:
                 return note_hash
 
-    async def no_results(ctx):
+    async def no_results(self, ctx):
         embed = discord.Embed(description="❌ No notes found for this user", colour=ctx.guild.me.colour)
         await ctx.send(embed=embed)
 
