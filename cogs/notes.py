@@ -152,7 +152,7 @@ class Notes(commands.Cog):
 
 # Helper functions
 
-    def make_note_embed(self, note: dict, index: dict, colour: discord.Colour = 0) -> discord.Embed:
+    def make_note_embed(self, note: dict, index: dict = {}, colour: discord.Colour = 0) -> discord.Embed:
         """Construct embed from note"""
         content = f"**Notes for <@{note['user']}>**\n{note['content']}"
         embed = discord.Embed(description=content, colour=colour)
