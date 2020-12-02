@@ -14,7 +14,22 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s]\t %(name)s: %(me
     logging.FileHandler(f'./logs/{config.LOGGING_FILENAME}')
 ])
 
-client = commands.Bot(command_prefix = config.DISCORD_PREFIX)
+intents = discord.Intents(
+    guilds=True,
+    members=True,
+    bans=True,
+    emojis=True,
+    messages=True,
+    guild_messages=True,
+    dm_messages=True,
+    reactions=True,
+    guild_reactions=True,
+    dm_reactions=True,
+    typing=True,
+    guild_typing=True,
+    dm_typing=True
+)
+client = commands.Bot(command_prefix = config.DISCORD_PREFIX, intents=intents)
 
 @client.event
 async def on_ready():
