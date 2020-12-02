@@ -60,6 +60,7 @@ class Notes(commands.Cog):
             return
 
         embeds = [self.make_note_embed(notes[i], {'current': i, 'max': len(notes) - 1}, ctx.guild.me.colour) for i in range(len(notes))]
+        embeds.reverse() # Sort newest first
         await menu(ctx, pages=embeds, controls=CUSTOM_CONTROLS, message=None, page=0, timeout=180)
 
     @notes.command()
