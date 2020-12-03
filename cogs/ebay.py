@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import aiohttp
+import bs4
 from bs4 import BeautifulSoup as soup
 import datetime
 from datetime import datetime as dt
