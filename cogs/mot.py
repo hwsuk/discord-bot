@@ -5,10 +5,10 @@ import logging
 import sys
 import config
 from datetime import datetime as dt
-from redbot.core.utils.menus import menu, prev_page, close_menu, next_page
 from colour import Color as Colour
+from redbot.core.utils.menus import menu, prev_page, next_page
 
-CUSTOM_CONTROLS = {"⬅️": prev_page, "⏹️": close_menu, "➡️": next_page}
+CUSTOM_CONTROLS = {"⬅️": prev_page, "➡️": next_page}
 
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s]\t %(name)s: %(message)s", handlers=[
@@ -94,6 +94,14 @@ class MOT(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+
+# Events
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print('MOT search cog online')
+
+# Commands
 
     @commands.command(name='mot')
     async def _mot(self, ctx, registration: str, year: int = 0):

@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.ext.commands import has_permissions, CheckFailure
+from discord.ext.commands import has_permissions
 import datetime
 import config
 import logging
@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s]\t %(name)s: %(me
 class Limiter(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.whitelistedUsers = []
+        self.whitelisted_users = []
 
     # Events
     @commands.Cog.listener()
@@ -33,7 +33,7 @@ class Limiter(commands.Cog):
             return
 
         author = message.author
-        if author.id in self.whitelistedUsers:
+        if author.id in self.whitelisted_users:
             return
         content = message.content # Save this
         time_limit = datetime.datetime.now() - datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS)
@@ -56,29 +56,25 @@ class Limiter(commands.Cog):
                     await self.send_info_message(author, message.channel.id, content)
 
     @commands.group()
+    @has_permissions(manage_roles=True)
     async def limiter(self, ctx):
         if ctx.invoked_subcommand is None:
             pass
 
     @limiter.command()
-    @has_permissions(manage_roles=True)
-    async def whitelist(self, ctx, user, seconds: int):
+    async def whitelist(self, ctx, member: discord.Member, seconds: int):
         """Allows a user to post in the buy-sell-trade channel within the slowmode time"""
-        if len(ctx.message.mentions) == 0:
-            await ctx.send("You need to specify a member to whitelist")
-        mentionedMember = ctx.message.mentions[0]
-
-        desc = f"{mentionedMember.mention} you can now post in <#{config.BUY_SELL_CHANNEL_ID}> for {str(datetime.timedelta(seconds=int(seconds)))}"
-        embed = discord.Embed(title=f"Whitelisted user", description=desc, colour=mentionedMember.colour)
+        desc = f"{member.mention} you can now post in <#{config.BUY_SELL_CHANNEL_ID}> for {str(datetime.timedelta(seconds=int(seconds)))}"
+        embed = discord.Embed(title=f"Whitelisted user", description=desc, colour=member.colour)
         await ctx.send(embed=embed)
-        self.whitelistedUsers.append(mentionedMember.id)
+        self.whitelisted_users.append(member.id)
         await asyncio.sleep(seconds)
         try:
-            self.whitelistedUsers.remove(mentionedMember.id)
+            self.whitelisted_users.remove(member.id)
         except ValueError:
-            logging.warning(f"User {mentionedMember.id} already removed from whitelist")
+            logging.warning(f"User {member.id} already removed from whitelist")
 
-    async def make_embed(self, author: discord.Member, deleted_content: str):
+    async def make_embed(self, author: discord.Member, deleted_content: str) -> discord.Embed:
         user = await self.client.fetch_user(author.id)
         embed = discord.Embed(description=deleted_content, colour=author.colour)
         if author.avatar is None:

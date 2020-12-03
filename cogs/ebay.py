@@ -4,8 +4,10 @@ import aiohttp
 import bs4
 from bs4 import BeautifulSoup as soup
 import datetime
+from datetime import datetime as dt
 import re
 import math
+from typing import Tuple, List
 
 headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
 
@@ -15,204 +17,194 @@ class Ebay(commands.Cog):
         self.client = client
 
     @commands.command(aliases=['pc','chk','price','pricecheck'])
-    async def check(self, ctx, *, searchTerm):
+    async def check(self, ctx, *, search_term):
         """Gets the average price of an item from Ebay
         
         Usage example:
         !check dell xps 15 -dead -broken -scratched
         words beginning with `-` are added to the list of words to be filtered out"""
-        searchTerm = searchTerm.lower()
+        search_term = search_term.lower()
         # If the searchterm with boolean operators removed is less than 6 characters
-        if len(' '.join([i for i in searchTerm.split(' ') if not i.startswith('-')])) < 6:
-            embed = await self.error_embed('length')
+        if len(' '.join([i for i in search_term.split(' ') if not i.startswith('-')])) < 6:
+            embed = self.error_embed('length')
             await ctx.send(embed=embed)
             return
 
         async with ctx.channel.typing():
-            filteredTerm, filteredWords = await self.get_filter(searchTerm)
-            page = await self.make_soup(filteredTerm)
-            productList = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
-            products = []
-            for i in productList:
-                p = await self.get_product_info(i)
-                if p is not None:
-                    products.append(p)
-
-            def filtered_out(title: str, filteredWords: list):
-                """Checks whether any words from the filter are in the listing title"""
-                for word in title.split(' '):
-                    if word.lower() in filteredWords:
-                        return True
-                return False
-
+            filtered_term, filtered_words = self.get_filter(search_term)
+            page = await self.make_soup(filtered_term)
+            product_list = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
+            products = [self.get_product_info(i) for i in product_list if self.get_product_info(i)]
             # Removes listings that don't pass the filter
-            filteredListings = [i for i in products if filtered_out(i['title'], filteredWords) is False]
-            if not filteredListings: # If no listings pass filter
-                desc = [f"No results found for `{filteredTerm}`"]
-                desc.append("Make sure to include manufacturer for best results")
-                desc.append("If you feel this is in error, message one of the bot developers")
-                embed = discord.Embed(title='No results found', colour=0xE53238, description='\n'.join(desc))
-                fW = [i[1:] for i in searchTerm.split(' ') if i.startswith('-')]
-                if fW:
-                    embed.add_field(name="Filtered words", value='\n'.join(fW), inline=True)
-                await ctx.send(embed=embed)
+            filtered_listings = [i for i in products if not self.filtered_out(i['title'], filtered_words)]
+            if not filtered_listings: # If no listings pass filter
+                await self.no_results(ctx, search_term)
                 return
-
             # If there are listings that passed the filter
             # Get the 25th, 50th and 75th percentiles of the price range
-            quartiles = await self.find_quartiles([i['price'] for i in filteredListings])
-            boxPlot = [i['price'] for i in filteredListings if quartiles[0] <= i['price'] <= quartiles [2]]
-            average = sum(boxPlot) / len(boxPlot)
+            quartiles = self.find_quartiles([i['price'] for i in filtered_listings])
+            box_plot = [i['price'] for i in filtered_listings if quartiles[0] <= i['price'] <= quartiles [2]]
+            average = sum(box_plot) / len(box_plot)
             # Get variance
-            variance = await self.determine_variance(boxPlot)
+            variance = self.determine_variance(box_plot)
             # Make and send the embed
-            embedDetails = {"title": f"Results for {filteredTerm}",
+            embed_details = {"title": f"Results for {filtered_term}",
                             "range": [quartiles[0], quartiles[2]],
                             "median": quartiles[1],
                             "average": average,
                             "variance": variance,
-                            "numOfItems": len(boxPlot),
-                            "filteredWords": [i.strip('-') for i in searchTerm.split(' ') if i.startswith('-')]}
-            embed = await self.make_embed(embedDetails)
+                            "num_of_items": len(box_plot),
+                            "filtered_words": [i.strip('-') for i in search_term.split(' ') if i.startswith('-')]}
+            embed = self.make_embed(embed_details)
             await ctx.send(embed=embed)
 
-    async def make_embed(self, data:dict):
-        """Generate an embed object"""
-        colour = await self.get_colour(data)
+    def filtered_out(self, title: str, filtered_words: list) -> bool:
+        """Checks whether any words from the filter are in the listing title"""
+        for word in title.split(' '):
+            if word.lower() in filtered_words:
+                return True
+        return False
 
-        def price(num):
+    def make_embed(self, data: dict) -> discord.Embed:
+        """Generate an embed object"""
+        colour = self.get_colour(data)
+
+        def as_price(num):
             """Formats a number as a price"""
             return '%.2f' % num if round(num, 2) == int(num) or num < 1 else int(num)
 
         embed = discord.Embed(title=data['title'], colour=colour)
-        embed.add_field(name='Range', value=f"£{price(data['range'][0])} - £{price(data['range'][1])}", inline=True)
-        embed.add_field(name='Median', value=f"£{price(data['median'])}", inline=True)
-        embed.add_field(name='Average', value=f"£{price(data['average'])}", inline=True)
+        embed.add_field(name='Range', value=f"£{as_price(data['range'][0])} - £{as_price(data['range'][1])}", inline=True)
+        embed.add_field(name='Median', value=f"£{as_price(data['median'])}", inline=True)
+        embed.add_field(name='Average', value=f"£{as_price(data['average'])}", inline=True)
         embed.add_field(name='Variance', value=f"{data['variance']}%", inline=True)
-        embed.add_field(name='Number of items', value=data['numOfItems'], inline=True)
-        if data['filteredWords']:
-            embed.add_field(name="Filtered words", value='\n'.join(data['filteredWords']), inline=False)
+        embed.add_field(name='Number of items', value=data['num_of_items'], inline=True)
+        if data['filtered_words']:
+            embed.add_field(name="Filtered words", value='\n'.join(data['filtered_words']), inline=False)
         return embed
 
-    async def make_soup(self, searchTerm):
+    async def make_soup(self, search_term):
         """Returns a BeautifulSoup object from an ebay search"""
-        url = f"https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw={searchTerm}&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=200&LH_ItemCondition=4&LH_PrefLoc=1"
+        url = f"https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw={search_term}&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=200&LH_ItemCondition=4&LH_PrefLoc=1"
         async with aiohttp.ClientSession() as session:
             data = await session.get(url, headers=headers)
-            pageText = await data.text()
+            page_text = await data.text()
             await session.close()
-        return soup(pageText, 'html.parser')
+        return soup(page_text, 'html.parser')
 
-    async def get_filter(self, searchTerm):
+    def get_filter(self, search_term: str) -> Tuple[str, list]:
         """Filters out listings with certain words"""
         # define filtered words
-        searchTerm = searchTerm.split(' ')
-        edgeCases = {'max': ['amd', 'intel'],
-                     'pc': ['case'],
-                     'cooler': ['aio', 'air', 'liquid']}
-        words = ['pro', 'plus', 'max', 'super', 'bundle', 'combo', 'faulty',
-                 'ti', 'xt', 'spare', 'spares', 'repair', 'repairs', 'cooler',
-                 'pc', 'damaged', 'broken', 'with', 'for', 'dell', 'hp',
-                 'gigabyte', 'acer', 'lenovo', 'asus', 'alienware', 'parts',
-                 'charger', 'dock', 'case', 'replicator', 'keyboard', 'mini',
-                 'lite', 'crack', 'cracked', '5g']
-        words.extend([i.strip('-').lower() for i in searchTerm if i.startswith('-')])
+        search_term = search_term.split(' ')
+        edge_cases = {
+            'max': ['amd', 'intel'],
+            'pc': ['case'],
+            'cooler': ['aio', 'air', 'liquid']
+        }
+        words = [
+            'pro', 'plus', 'max', 'super', 'bundle', 'combo', 'faulty',
+            'ti', 'xt', 'spare', 'spares', 'repair', 'repairs', 'cooler',
+            'pc', 'damaged', 'broken', 'with', 'for', 'dell', 'hp',
+            'gigabyte', 'acer', 'lenovo', 'asus', 'alienware', 'parts',
+            'charger', 'dock', 'case', 'replicator', 'keyboard', 'mini',
+            'lite', 'crack', 'cracked', '5g'
+        ]
+        words.extend([i.strip('-').lower() for i in search_term if i.startswith('-')])
         # remove duplicates
         words = list(dict.fromkeys(words))
         # collect words that were added to the filter
-        filteredWords = [i for i in searchTerm if i.startswith('-')]
+        filtered_words = [i for i in search_term if i.startswith('-')]
         # search term with boolean operators removed
-        filteredSearchTerm = [i for i in searchTerm if not i.startswith('-')]
+        filtered_search_term = [i for i in search_term if not i.startswith('-')]
         # remove words in search from filter
         for word in words:
-            if word in filteredSearchTerm:
+            if word in filtered_search_term:
                 words.remove(word)
-                if word in filteredWords:
-                    filteredWords.remove(word)
+                if word in filtered_words:
+                    filtered_words.remove(word)
         # remove words from filter if searching for certain things
-        for key in edgeCases.keys():
-            for word in edgeCases[key]:
-                if word in filteredSearchTerm and key in words:
+        for key in edge_cases.keys():
+            for word in edge_cases[key]:
+                if word in filtered_search_term and key in words:
                     words.remove(key)
-        return ' '.join(filteredSearchTerm), words
+        return ' '.join(filtered_search_term), words
 
-    async def get_product_info(self, product):
+    def get_product_info(self, product) -> dict:
         """Fetches the product info from a product listing as a dict"""
         try:
             d = {}
             d['title'] = product.find('h3', {'class': 's-item__title'}).contents[-1]
-            d['url'] = product.find('a')['href']
+            d['url'] = product.find('a')['href'].split('?')[0]
             d['image'] = product.find('img')['src']
-            d['price'] = await self.parse_price(product)
+            d['price'] = self.parse_price(product)
             if not d['price']: # If £ not in price
                 return None
-            d['ended_date'] = await self.parse_date(product)
+            d['ended_date'] = self.parse_date(product)
             d['id'] = d['url'].split('/')[-1].split('?')[0]
             # Type enforcement on dictionary object
             return {'title': str(d['title']), 'url': str(d['url']), 'image': str(d['image']), 'price': d['price'], 'ended_date': d['ended_date'], 'id': str(d['id'])}
         except:
-            return None
+            return {}
 
-    async def parse_price(self, product):
+    def parse_price(self, product):
         """Retrieves the full price from a product listing"""
-        logReg = re.compile('\+\s£(\d+\.\d+).*')
-        basePrice = product.find('span', {'class': 's-item__price'}).contents[0].contents[0]
-        if '£' not in basePrice: # Ignore foreign listings
+        log_reg = re.compile('\+\s£(\d+\.\d+).*')
+        base_price = product.find('span', {'class': 's-item__price'}).contents[0].contents[0]
+        if '£' not in base_price: # Ignore foreign listings
             return None
-        basePrice = float(product.find('span', {'class': 's-item__price'}).contents[0].contents[0].strip('£').replace(',','')) # Find the listing price
+        base_price = float(product.find('span', {'class': 's-item__price'}).contents[0].contents[0].strip('£').replace(',','')) # Find the listing price
         if not product.find('span', {'class': 's-item__logisticsCost'}): # If there is no postage price return the listing price
-            return basePrice
+            return base_price
         logistics = product.find('span', {'class': 's-item__logisticsCost'}).contents[0]
         if type(logistics) is bs4.element.NavigableString:
             if logistics.lower() in ['free postage', 'postage not specified']: # Ignore common strings
                 postage = 0
-            elif logReg.match(logistics): # Find the price if there's a regex match
-                postage = float(logReg.match(logistics).group(1))
+            elif log_reg.match(logistics): # Find the price if there's a regex match
+                postage = float(log_reg.match(logistics).group(1))
             else:
                 postage = 0
         else: # If type is not NavigableString (most likely to be Tag)
             logistics = logistics.contents[-1]
-            if logReg.match(logistics): # Apply regex
-                postage = float(logReg.match(logistics).group(1))
+            if log_reg.match(logistics): # Apply regex
+                postage = float(log_reg.match(logistics).group(1))
             else: # Account for edge cases
                 postage = 0
-        return basePrice + postage
+        return base_price + postage
 
-    async def parse_date(self, product):
+    def parse_date(self, product) -> datetime.datetime:
         """Retrieves the ended date from a product listing"""
         # Fetch the date string
         base = product.find('span', {'class': 's-item__ended-date'}).contents[0]
-        # Retrieve the individual parts of the date
-        day = int(base.split('-')[0])
-        months = {datetime.date(2020, i, 1).strftime('%B')[:3]: i for i in range(1,13)}
-        month = months[base.split('-')[1].split(' ')[0]]
-        time = base.split(' ')[1]
-        hour = int(time.split(':')[0])
-        minute = int(time.split(':')[1])
-        # Convert to a datetime object
-        return datetime.datetime(year=datetime.datetime.now().year, month=month, day=day, hour=hour, minute=minute)
+        # Interpret month and year
+        month_regex = re.compile("\d{2}-(\w*)\W\d{2}:\d{2}")
+        matched_month = month_regex.match(base).group(1)
+        months = {datetime.date(2020, i, 1).strftime('%B')[:3]: str(i) for i in range(1,13)}
+        year = dt.now().year if int(months[matched_month]) <= dt.now().month else dt.now().year - 1
+        # Convert to datetime.datetime object
+        date_string = f"{year} {base.replace(matched_month, months[matched_month])}"
+        return dt.strptime(date_string, '%Y %d-%m %H:%M')
 
-    async def find_quartiles(self, numArray: list):
+    def find_quartiles(self, num_array: List[float]) -> List[float]:
         """Find quartile positions from a list of prices"""
-        size = len(numArray)
+        size = len(num_array)
         if size == 0:
             quartiles = [0,0,0]
         else:
-            sortedArray = sorted(numArray)
-            lowerPos, medianPos, upperPos = await self.find_quartile_postions(size)
+            sorted_array = sorted(num_array)
+            lower_pos, median_pos, upper_pos = self.find_quartile_postions(size)
             # Floor so can work in arrays
-            flooredLowerPos = math.floor(lowerPos)
-            flooredMedianPos = math.floor(medianPos)
-            flooredUpperPos = math.floor(upperPos)
+            floored_lower_pos = math.floor(lower_pos)
+            floored_median_pos = math.floor(median_pos)
+            floored_upper_pos = math.floor(upper_pos)
             # If position is an integer, the quartile is the elem at position
             # else the quartile is the mean of the elem & the elem one position above
-            lowerQuartile = sortedArray[flooredLowerPos] if (lowerPos % 1 == 0) else (sortedArray[flooredLowerPos] + sortedArray[flooredLowerPos + 1]) / 2
-            median = sortedArray[flooredMedianPos] if (medianPos % 1 == 0) else (sortedArray[flooredMedianPos] + sortedArray[flooredMedianPos + 1]) / 2
-            upperQuartile = sortedArray[flooredUpperPos] if (upperPos % 1 == 0) else (sortedArray[flooredUpperPos] + sortedArray[flooredUpperPos + 1]) / 2
-            quartiles = [round(i, 2) for i in [lowerQuartile, median, upperQuartile]]
+            lower_quartile = sorted_array[floored_lower_pos] if (lower_pos % 1 == 0) else (sorted_array[floored_lower_pos] + sorted_array[floored_lower_pos + 1]) / 2
+            median = sorted_array[floored_median_pos] if (median_pos % 1 == 0) else (sorted_array[floored_median_pos] + sorted_array[floored_median_pos + 1]) / 2
+            upper_quartile = sorted_array[floored_upper_pos] if (upper_pos % 1 == 0) else (sorted_array[floored_upper_pos] + sorted_array[floored_upper_pos + 1]) / 2
+            quartiles = [round(i, 2) for i in [lower_quartile, median, upper_quartile]]
         return quartiles
 
-    async def find_quartile_postions(self, size: int):
+    def find_quartile_postions(self, size: int) -> Tuple[float]:
         """Determines quartile positions from """
         if size == 1:
             # All quartiles are the first (only) element
@@ -225,14 +217,14 @@ class Ebay(commands.Cog):
             # Quartiles can be between positions if size + 1 is not divisible by 4
             return (size + 1) / 4 - 1, (size + 1) / 2 - 1, 3 * (size + 1) / 4 - 1
 
-    async def determine_variance(self, priceRange):
+    def determine_variance(self, price_range: List[float]) -> float:
         """Get the variance of a price range"""
-        mean = sum(priceRange) / len(priceRange) # Get the mean price
-        priceRange.sort()
-        variance = (priceRange[-1] - priceRange[0]) / mean * 100 # Range over mean as a percentage
+        mean = sum(price_range) / len(price_range) # Get the mean price
+        price_range.sort()
+        variance = (price_range[-1] - price_range[0]) / mean * 100 # Range over mean as a percentage
         return round(variance, 2)
 
-    async def get_colour(self, data):
+    def get_colour(self, data: dict) -> int:
         """Determines embed colour based on variance amount"""
         if 0 <= data['variance'] < 16.6:
             return 0x78B159 # green
@@ -241,10 +233,24 @@ class Ebay(commands.Cog):
         elif 33.3 <= data['variance']:
             return 0xDD2E44 # red
 
-    async def error_embed(self, error):
+    async def no_results(self, ctx, search_term: str):
+        filtered_term = [i for i in search_term.split(' ') if not i.startswith('-')]
+        desc = [f"No results found for `{filtered_term}`"]
+        desc.append("Make sure to include manufacturer for best results")
+        desc.append("If you feel this is in error, message one of the bot developers")
+        embed = discord.Embed(title='No results found', colour=0xE53238, description='\n'.join(desc))
+        filtered_words = [i[1:] for i in search_term.split(' ') if i.startswith('-')]
+        if filtered_words:
+            embed.add_field(name="Filtered words", value='\n'.join(filtered_words), inline=True)
+        await ctx.send(embed=embed)
+        return
+
+    def error_embed(self, error: str) -> discord.Embed:
         """Generates an error embed"""
-        errors = {'length': 'Your search must be more than 6 characters',
-                  'timeout': 'The server failed to fetch a result'}
+        errors = {
+            'length': 'Your search must be more than 6 characters',
+            'timeout': 'The server failed to fetch a result'
+        }
         return discord.Embed(title='Error', description=errors[error], colour=0xDD2E44)
 
 def setup(client):
