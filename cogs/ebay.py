@@ -133,7 +133,7 @@ class Ebay(commands.Cog):
         try:
             d = {}
             d['title'] = product.find('h3', {'class': 's-item__title'}).contents[-1]
-            d['url'] = product.find('a')['href']
+            d['url'] = product.find('a')['href'].split('?')[0]
             d['image'] = product.find('img')['src']
             d['price'] = self.parse_price(product)
             if not d['price']: # If £ not in price
@@ -178,7 +178,7 @@ class Ebay(commands.Cog):
         month_regex = re.compile("\d{2}-(\w*)\W\d{2}:\d{2}")
         matched_month = month_regex.match(base).group(1)
         months = {datetime.date(2020, i, 1).strftime('%B')[:3]: str(i) for i in range(1,13)}
-        year = dt.now().year if months[matched_month] <= dt.now().month else dt.now().year - 1
+        year = dt.now().year if int(months[matched_month]) <= dt.now().month else dt.now().year - 1
         # Convert to datetime.datetime object
         date_string = f"{year} {base.replace(matched_month, months[matched_month])}"
         return dt.strptime(date_string, '%Y %d-%m %H:%M')
