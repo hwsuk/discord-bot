@@ -30,21 +30,15 @@ class Ebay(commands.Cog):
             return
 
         async with ctx.channel.typing():
-            filtered_term, filtered_words = await self.get_filter(search_term)
+            filtered_term, filtered_words = self.get_filter(search_term)
             page = await self.make_soup(filtered_term)
             product_list = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
-            products = []
-            for i in product_list:
-                p = await self.get_product_info(i)
-                if p:
-                    products.append(p)
-
+            products = [self.get_product_info(i) for i in product_list if self.get_product_info(i)]
             # Removes listings that don't pass the filter
             filtered_listings = [i for i in products if not self.filtered_out(i['title'], filtered_words)]
             if not filtered_listings: # If no listings pass filter
                 await self.no_results(ctx, search_term)
                 return
-
             # If there are listings that passed the filter
             # Get the 25th, 50th and 75th percentiles of the price range
             quartiles = self.find_quartiles([i['price'] for i in filtered_listings])
@@ -72,16 +66,16 @@ class Ebay(commands.Cog):
 
     def make_embed(self, data: dict) -> discord.Embed:
         """Generate an embed object"""
-        colour = await self.get_colour(data)
+        colour = self.get_colour(data)
 
-        def price(num):
+        def as_price(num):
             """Formats a number as a price"""
             return '%.2f' % num if round(num, 2) == int(num) or num < 1 else int(num)
 
         embed = discord.Embed(title=data['title'], colour=colour)
-        embed.add_field(name='Range', value=f"£{price(data['range'][0])} - £{price(data['range'][1])}", inline=True)
-        embed.add_field(name='Median', value=f"£{price(data['median'])}", inline=True)
-        embed.add_field(name='Average', value=f"£{price(data['average'])}", inline=True)
+        embed.add_field(name='Range', value=f"£{as_price(data['range'][0])} - £{as_price(data['range'][1])}", inline=True)
+        embed.add_field(name='Median', value=f"£{as_price(data['median'])}", inline=True)
+        embed.add_field(name='Average', value=f"£{as_price(data['average'])}", inline=True)
         embed.add_field(name='Variance', value=f"{data['variance']}%", inline=True)
         embed.add_field(name='Number of items', value=data['num_of_items'], inline=True)
         if data['filtered_words']:
@@ -97,19 +91,23 @@ class Ebay(commands.Cog):
             await session.close()
         return soup(page_text, 'html.parser')
 
-    async def get_filter(self, search_term):
+    def get_filter(self, search_term: str) -> Tuple[str, list]:
         """Filters out listings with certain words"""
         # define filtered words
         search_term = search_term.split(' ')
-        edge_cases = {'max': ['amd', 'intel'],
-                     'pc': ['case'],
-                     'cooler': ['aio', 'air', 'liquid']}
-        words = ['pro', 'plus', 'max', 'super', 'bundle', 'combo', 'faulty',
-                 'ti', 'xt', 'spare', 'spares', 'repair', 'repairs', 'cooler',
-                 'pc', 'damaged', 'broken', 'with', 'for', 'dell', 'hp',
-                 'gigabyte', 'acer', 'lenovo', 'asus', 'alienware', 'parts',
-                 'charger', 'dock', 'case', 'replicator', 'keyboard', 'mini',
-                 'lite', 'crack', 'cracked', '5g']
+        edge_cases = {
+            'max': ['amd', 'intel'],
+            'pc': ['case'],
+            'cooler': ['aio', 'air', 'liquid']
+        }
+        words = [
+            'pro', 'plus', 'max', 'super', 'bundle', 'combo', 'faulty',
+            'ti', 'xt', 'spare', 'spares', 'repair', 'repairs', 'cooler',
+            'pc', 'damaged', 'broken', 'with', 'for', 'dell', 'hp',
+            'gigabyte', 'acer', 'lenovo', 'asus', 'alienware', 'parts',
+            'charger', 'dock', 'case', 'replicator', 'keyboard', 'mini',
+            'lite', 'crack', 'cracked', '5g'
+        ]
         words.extend([i.strip('-').lower() for i in search_term if i.startswith('-')])
         # remove duplicates
         words = list(dict.fromkeys(words))
@@ -130,7 +128,7 @@ class Ebay(commands.Cog):
                     words.remove(key)
         return ' '.join(filtered_search_term), words
 
-    async def get_product_info(self, product) -> dict:
+    def get_product_info(self, product) -> dict:
         """Fetches the product info from a product listing as a dict"""
         try:
             d = {}
