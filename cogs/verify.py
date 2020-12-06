@@ -114,7 +114,7 @@ class Verify(commands.Cog):
             return
 
         if len(ctx.message.mentions) == 1:
-            user_data = await self.get_user(ctx.message.mentions[0].id)
+            user_data = await self.get_user(str(ctx.message.mentions[0].id))
         else:
             user_data = await self.get_user(user)
 
@@ -191,7 +191,7 @@ class Verify(commands.Cog):
             await ctx.send(embed=discord.Embed(description=desc))
             return
         if len(ctx.message.mentions) == 1:
-            user_data = await self.get_user(ctx.message.mentions[0].id)
+            user_data = await self.get_user(str(ctx.message.mentions[0].id))
         else:
             user_data = await self.get_user(user)
         if user_data == None:
