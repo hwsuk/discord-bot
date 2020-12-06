@@ -327,8 +327,9 @@ class Verify(commands.Cog):
         member = server.get_member(int(discord_id))
         trade_roles = [conf['flairs'][i]['rid'] for i in conf['flairs']]
         member_trade_roles = [i for i in member.roles if i.id in trade_roles]
-        for role in member_trade_roles:
-            await member.remove_roles(role)
+        if member_trade_roles:
+            for role in member_trade_roles:
+                await member.remove_roles(role)
 
     # Useful for editflair
     async def set_trade_flair(self, user_data, flair):
