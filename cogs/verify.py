@@ -114,7 +114,7 @@ class Verify(commands.Cog):
             return
 
         if len(ctx.message.mentions) == 1:
-            user_data = await self.get_user(ctx.message.mentions[0].id)
+            user_data = await self.get_user(str(ctx.message.mentions[0].id))
         else:
             user_data = await self.get_user(user)
 
@@ -191,7 +191,7 @@ class Verify(commands.Cog):
             await ctx.send(embed=discord.Embed(description=desc))
             return
         if len(ctx.message.mentions) == 1:
-            user_data = await self.get_user(ctx.message.mentions[0].id)
+            user_data = await self.get_user(str(ctx.message.mentions[0].id))
         else:
             user_data = await self.get_user(user)
         if user_data == None:
@@ -333,13 +333,11 @@ class Verify(commands.Cog):
     async def set_trade_flair(self, user_data, flair):
         try:
             flair_text = f"{flair} Trades"
-            reddit_name = user_data['reddit']['name'].replace(
-                "'", "").replace("{", "").replace("}", "")
-            reddit.subreddit("hardwareswapuk").flair.set(str({user_data["reddit"]["name"] if user_data else None}).replace(
-                "'", "").replace("{", "").replace("}", ""), flair_text, css_class=flair_text.replace("+", ""))
+            reddit.subreddit("hardwareswapuk").flair.set(user_data["reddit"]["name"], flair_text, css_class=flair_text.replace("+", ""))
         except Exception as err:
             logging.error(
-                f"ERROR SETTING FLAIR FOR {user_data['reddit']['name']}: {err}")
+                f"ERROR SETTING FLAIR FOR {user_data['reddit']['name']}: {err}"
+            )
             return False
         return True
 
