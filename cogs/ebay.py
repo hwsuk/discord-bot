@@ -109,7 +109,7 @@ class EbaySearch:
             except ListingParsingFailed:
                 continue
         # Removes listings that don't pass the filter
-        self.filtered_listings = [i for i in products if not self.filtered_out(i.title, self.filtered_words)]
+        self.filtered_listings = [i for i in products if not self.filtered_out(i.title)]
 
     async def make_soup(self):
         """Returns a BeautifulSoup object from an ebay search"""
