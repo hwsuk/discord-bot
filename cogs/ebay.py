@@ -99,7 +99,7 @@ class EbaySearch:
 
     async def get_listings(self):
         """Fetch the search results from ebay"""
-        page = await self.make_soup(self.filtered_term)
+        page = await self.make_soup()
         product_list = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
         products = []
         for i in product_list:
@@ -244,8 +244,8 @@ class Ebay(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.command(aliases=['pc','chk','price','pricecheck'])
-    async def check(self, ctx, *, search_term):
+    @commands.command(aliases=['check', 'pc', 'chk', 'price', 'pricecheck'])
+    async def ebay(self, ctx, *, search_term):
         """Gets the average price of an item from Ebay
         
         Usage example:
