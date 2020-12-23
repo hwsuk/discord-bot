@@ -181,7 +181,7 @@ class SearchStatistics:
             return '%.2f' % num if round(num, 2) == int(num) or num < 1 else int(num)
 
         filtered_words = '\n'.join(i.strip('-') for i in self.search.original_term.split() if i.startswith('-') and i.strip('-').lower() in self.search.filtered_words)
-        embed = discord.Embed(title=f"Results for {self.search.original_case_filtered_term}", colour=self.get_colour())
+        embed = discord.Embed(title=f"Results for {self.search.original_case_filtered_search_term}", colour=self.get_colour())
         embed.add_field(name='Range', value=f"£{as_price(self.quartiles[0])} - £{as_price(self.quartiles[2])}", inline=True)
         embed.add_field(name='Median', value=f"£{as_price(self.quartiles[1])}", inline=True)
         embed.add_field(name='Average', value=f"£{as_price(self.average)}", inline=True)
