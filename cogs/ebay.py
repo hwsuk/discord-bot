@@ -109,7 +109,7 @@ class EbaySearch:
             except ListingParsingFailed:
                 continue
         # Removes listings that don't pass the filter
-        self.filtered_listings = [i for i in products if not self.filtered_out(i['title'], self.filtered_words)]
+        self.filtered_listings = [i for i in products if not self.filtered_out(i.title, self.filtered_words)]
 
     async def make_soup(self):
         """Returns a BeautifulSoup object from an ebay search"""
@@ -158,8 +158,8 @@ class EbaySearch:
 class SearchStatistics:
     def __init__(self, search: EbaySearch):
         self.search = search
-        self.quartiles = self.find_quartiles([i['price'] for i in self.search.filtered_listings])
-        self.box_plot = [i['price'] for i in self.search.filtered_listings if self.quartiles[0] <= i['price'] <= self.quartiles [2]]
+        self.quartiles = self.find_quartiles([i.price for i in self.search.filtered_listings])
+        self.box_plot = [i.price for i in self.search.filtered_listings if self.quartiles[0] <= i.price <= self.quartiles [2]]
         self.average = sum(self.box_plot) / len(self.box_plot)
         self.variance = self.determine_variance(self.box_plot)
         self.embed = self.make_summary_embed()
