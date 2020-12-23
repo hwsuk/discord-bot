@@ -288,7 +288,7 @@ class Ebay(commands.Cog):
 
     # Menu functions
 
-    async def refilter_menu(self, ctx: commands.Context, message: discord.Message,  position: int, search: EbaySearch):
+    async def refilter_menu(self, ctx: commands.Context, message: discord.Message, search: EbaySearch,  position: int):
         """Refilter menu loop"""
         emojis = ['⬅', '🗑', '➡', '✅']
         def reaction_info_check(reaction, user):
@@ -303,18 +303,21 @@ class Ebay(commands.Cog):
             # User has reacted with an emoji, let's find out what it is
             await message.remove_reaction(reaction.emoji, ctx.author)
             if reaction.emoji == '⬅':
-                position -= 1
-                await message.edit(embed=search.filtered_listings[position])
-                await self.refilter_menu(ctx, message, search.filtered_listings, position)
+                position = (position - 1) % (len(search.filtered_listings) - 1)
+                search.filtered_listings[position].embed.set_footer(text=f"{position + 1} of {len(search.filtered_listings)}")
+                await message.edit(embed=search.filtered_listings[position].embed)
+                await self.refilter_menu(ctx, message, search, position)
             elif reaction.emoji == '➡':
-                position += 1
-                await message.edit(embed=search.filtered_listings[position])
-                await self.refilter_menu(ctx, message, search.filtered_listings, position)
+                position = (position + 1) % (len(search.filtered_listings) - 1)
+                search.filtered_listings[position].embed.set_footer(text=f"{position + 1} of {len(search.filtered_listings)}")
+                await message.edit(embed=search.filtered_listings[position].embed)
+                await self.refilter_menu(ctx, message, search, position)
             elif reaction.emoji == '🗑':
-                search.filtered_listings.remove(search.filtered_listings[position])
+                search.filtered_listings.remove(search.filtered_listings[position].embed)
                 position = position % (len(search.filtered_listings) - 1)
-                await message.edit(embed=search.filtered_listings[position])
-                await self.refilter_menu(ctx, message, search)
+                search.filtered_listings[position].embed.set_footer(text=f"{position + 1} of {len(search.filtered_listings)}")
+                await message.edit(embed=search.filtered_listings[position].embed)
+                await self.refilter_menu(ctx, message, search, position)
             elif reaction.emoji == '✅':
                 await message.delete()
                 await self.send_search_statistics(ctx, search)
@@ -342,7 +345,7 @@ class Ebay(commands.Cog):
             emojis = ['⬅', '🗑', '➡', '✅']
             for emoji in emojis:
                 await message.add_reaction(emoji)
-            await self.refilter_menu(ctx, message, search)
+            await self.refilter_menu(ctx, message, search, 0)
 
 def setup(client):
     client.add_cog(Ebay(client))
