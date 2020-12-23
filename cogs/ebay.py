@@ -184,7 +184,7 @@ class SearchStatistics:
         embed.add_field(name='Average', value=f"£{as_price(self.average)}", inline=True)
         embed.add_field(name='Variance', value=f"{self.variance}%", inline=True)
         embed.add_field(name='Number of items', value=len(self.box_plot), inline=True)
-        if self.filtered_words:
+        if self.search.filtered_words:
             embed.add_field(name="Filtered words", value=filtered_words, inline=False)
         return embed
 
