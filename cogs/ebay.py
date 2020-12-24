@@ -184,7 +184,7 @@ class SearchStatistics:
         filtered_words = '\n'.join(
             [
                 i.strip('-')
-                for i in self.search.original_term.split
+                for i in self.search.original_term.split()
             ]
         )
 
