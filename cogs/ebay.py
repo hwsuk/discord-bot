@@ -28,12 +28,13 @@ class Listing:
 
 class SoldListing(Listing):
     def __init__(self, product):
-        super().__init__(product)
-        self.price = self.parse_price(product)
-        if not self.price:
+        try:
+            super().__init__(product)
+            self.price = self.parse_price(product)
+            self.ended_date = self.parse_date(product)
+            self.embed = self.make_listing_embed()
+        except:
             raise ListingParsingFailed("Failed to parse listing")
-        self.ended_date = self.parse_date(product)
-        self.embed = self.make_listing_embed()
 
     def parse_price(self, product) -> float:
         """Retrieves the full price from a product listing"""
@@ -179,6 +180,13 @@ class SearchStatistics:
         def as_price(num: Union[float, int]):
             """Formats a number as a price"""
             return '%.2f' % num if round(num, 2) == int(num) or num < 1 else int(num)
+
+        filtered_words = '\n'.join(
+            [
+                i.strip('-')
+                for i in self.search.original_term.split
+            ]
+        )
 
         filtered_words = '\n'.join(i.strip('-') for i in self.search.original_term.split() if i.startswith('-') and i.strip('-').lower() in self.search.filtered_words)
         embed = discord.Embed(title=f"Results for {self.search.original_case_filtered_search_term}", colour=self.get_colour())
