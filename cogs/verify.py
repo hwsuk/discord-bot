@@ -262,7 +262,7 @@ class Verify(commands.Cog):
     # Useful for whois and editflair
     async def get_user(self, user: str) -> dict:
         discord_discrim_regex = re.compile("[\w]*#[0-9]{4}")  # eg. issy#4200
-        if user.isdigit() and len(user) == 18:  # eg. 377212919068229633
+        if user.isdigit() and len(user) > 15:  # eg. 377212919068229633
             user_type = 'discord.id'
         # eg. /u/issythegurl or u/issythegurl
         elif user.startswith('u/') or user.startswith('/u/'):
