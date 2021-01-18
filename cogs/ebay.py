@@ -23,6 +23,11 @@ class Ebay(commands.Cog):
         Usage example:
         !check dell xps 15 -dead -broken -scratched
         words beginning with `-` are added to the list of words to be filtered out"""
+        
+        # Disable this cog, as the eBay integration is broken.
+        await ctx.send("Bot machine :b:roke")
+        return
+        
         search_term = search_term.lower()
         # If the searchterm with boolean operators removed is less than 6 characters
         if len(' '.join([i for i in search_term.split(' ') if not i.startswith('-')])) < 6:
