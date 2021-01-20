@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 import datetime
+import humanize
 import config
 import logging
 import asyncio
@@ -53,7 +54,7 @@ class Limiter(commands.Cog):
                     logging.error(f"Failed to delete message {message.id} from {author.id} : {e}")
 
                 if deletion_success:
-                    await self.send_info_message(author, message.channel.id, content)
+                    await self.send_info_message(author, message.channel.id, content, message.created_at)
 
     @commands.group()
     @has_permissions(manage_roles=True)
@@ -83,13 +84,21 @@ class Limiter(commands.Cog):
             embed.set_author(name=author.display_name, icon_url = f"https://cdn.discordapp.com/avatars/{author.id}/{author.avatar}.png")
         return embed
 
-    async def send_info_message(self, author: discord.Member, channel_id: int, deleted_content: str):
+    async def send_info_message(self, author: discord.Member, channel_id: int, deleted_content: str, creation_time: datetime):
         if author.dm_channel is None:
             await author.create_dm()
+
         dm_channel = author.dm_channel
-        content = f"Your post in <#{channel_id}> has been removed due to being within {str(datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS))} of your last post."
-        content += "\nThe message has been saved for you"
+
+        limit_timestamp = datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS)
+        post_again_formatted_time = (datetime.datetime.now() + limit_timestamp).strftime("%d/%m/%Y %I:%M:%S %p")
+
+        content = f"Your post in <#{channel_id}> has been removed due to being within {humanize.naturaldelta(limit_timestamp)} of your last post."
+        content += f"\nYou may post again at {post_again_formatted_time}."
+        content += "\n\nBelow is the message you tried to send:"
+
         embed = await self.make_embed(author, deleted_content)
+
         try:
             await dm_channel.send(content, embed=embed)
         except: # If the bot can't DM the user
