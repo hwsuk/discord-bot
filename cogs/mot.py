@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import aiohttp
+import httpx
 import logging
 import sys
 import config
@@ -81,13 +81,13 @@ class Vehicle:
 async def get_vehicle(registration: str) -> Vehicle:
     headers = {'x-api-key': config.DVLA_API_KEY}
     url = f'https://beta.check-mot.service.gov.uk/trade/vehicles/mot-tests/?registration={registration}'
-    async with aiohttp.ClientSession() as session:
-        data = await session.get(url, headers=headers)
-        json = await data.json()
-        await session.close()
+    async with httpx.AsyncClient() as client:
+        data = await client.get(url, headers=headers)
+        json = data.json()
 
     if 'httpStatus' in json: # 404
         return None
+
     return Vehicle(json[0])
 
 class MOT(commands.Cog):

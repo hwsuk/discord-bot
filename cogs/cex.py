@@ -1,4 +1,4 @@
-import aiohttp
+import httpx
 import discord
 from discord.ext import commands
 import urllib.parse
@@ -103,10 +103,16 @@ class Cex(commands.Cog):
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
         }
         clean_search_term = urllib.parse.quote(search_term) # Clean up the search term for the url
-        async with aiohttp.ClientSession() as session:
-            data = await session.get(f'https://wss2.cex.uk.webuy.io/v3/boxes?q={clean_search_term}&firstRecord=1&count=50&sortOrder=desc', headers=headers)
-            products = await data.json()
-            await session.close()
+        url = f'https://wss2.cex.uk.webuy.io/v3/boxes?q={clean_search_term}&firstRecord=1&count=50&sortOrder=desc'
+
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url, headers=headers)
+
+        if r.status_code != 200:
+            return ()
+
+        products = r.json()
+
         if products['response']['data']:
             return tuple(products['response']['data']['boxes'])
         else:

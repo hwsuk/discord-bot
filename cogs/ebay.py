@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import aiohttp
+import httpx
 import bs4
 from bs4 import BeautifulSoup as soup
 import datetime
@@ -9,7 +9,7 @@ import re
 import math
 from typing import Tuple, List
 
-headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36'}
 
 class Ebay(commands.Cog):
 
@@ -23,10 +23,6 @@ class Ebay(commands.Cog):
         Usage example:
         !check dell xps 15 -dead -broken -scratched
         words beginning with `-` are added to the list of words to be filtered out"""
-        
-        # Disable this cog, as the eBay integration is broken.
-        await ctx.send("Bot machine :b:roke")
-        return
         
         search_term = search_term.lower()
         # If the searchterm with boolean operators removed is less than 6 characters
@@ -91,11 +87,14 @@ class Ebay(commands.Cog):
     async def make_soup(self, search_term):
         """Returns a BeautifulSoup object from an ebay search"""
         url = f"https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw={search_term}&_sacat=0&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=200&LH_ItemCondition=4&LH_PrefLoc=1"
-        async with aiohttp.ClientSession() as session:
-            data = await session.get(url, headers=headers)
-            page_text = await data.text()
-            await session.close()
-        return soup(page_text, 'html.parser')
+
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url, headers=headers)
+
+        if r.status_code != 200:
+            return None
+
+        return soup(r.text, 'html.parser')
 
     def get_filter(self, search_term: str) -> Tuple[str, list]:
         """Filters out listings with certain words"""
