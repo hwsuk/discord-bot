@@ -54,7 +54,7 @@ class Limiter(commands.Cog):
                     logging.error(f"Failed to delete message {message.id} from {author.id} : {e}")
 
                 if deletion_success:
-                    await self.send_info_message(author, message.channel.id, content, message.created_at)
+                    await self.send_info_message(author, message.channel.id, content, past_message.created_at)
 
     @commands.group()
     @has_permissions(manage_roles=True)
@@ -91,7 +91,7 @@ class Limiter(commands.Cog):
         dm_channel = author.dm_channel
 
         limit_timestamp = datetime.timedelta(seconds=config.BUY_SELL_LIMIT_SECONDS)
-        post_again_formatted_time = (datetime.datetime.now() + limit_timestamp).strftime("%d/%m/%Y %I:%M:%S %p")
+        post_again_formatted_time = (creation_time + limit_timestamp).strftime("%d/%m/%Y %I:%M:%S %p")
 
         content = f"Your post in <#{channel_id}> has been removed due to being within {humanize.naturaldelta(limit_timestamp)} of your last post."
         content += f"\nYou may post again at {post_again_formatted_time}."
