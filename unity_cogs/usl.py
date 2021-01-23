@@ -22,6 +22,10 @@ class UniversalScammerList(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print('Universal Scammer List search cog online')
+
     @commands.command(name='usl')
     async def query_universal_scammer_list(self, ctx, *, username):
         """
