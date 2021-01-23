@@ -4,7 +4,7 @@ import sys
 import logging
 from discord.ext import commands
 from discord.ext.commands import has_permissions
-import config
+from unity_util import bot_config
 import motor.motor_asyncio
 import time
 from datetime import datetime as dt
@@ -15,13 +15,13 @@ from redbot.core.utils.menus import menu, prev_page, next_page
 
 CUSTOM_CONTROLS = {"⬅️": prev_page, "➡️": next_page}
 
-mongo = motor.motor_asyncio.AsyncIOMotorClient(host=config.MONGODB_HOST, port=int(
-    config.MONGODB_PORT), replicaSet="rs01", username=config.MONGODB_USERNAME, password=config.MONGODB_PASSWORD, authSource=config.MONGODB_DATABASE, authMechanism='SCRAM-SHA-1')
-db = mongo[config.MONGODB_DATABASE]
+mongo = motor.motor_asyncio.AsyncIOMotorClient(host=bot_config.MONGODB_HOST, port=int(
+    bot_config.MONGODB_PORT), replicaSet="rs01", username=bot_config.MONGODB_USERNAME, password=bot_config.MONGODB_PASSWORD, authSource=bot_config.MONGODB_DATABASE, authMechanism='SCRAM-SHA-1')
+db = mongo[bot_config.MONGODB_DATABASE]
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s]\t %(name)s: %(message)s", handlers=[
     logging.StreamHandler(sys.stdout),
-    logging.FileHandler(f'./logs/{config.LOGGING_FILENAME}')
+    logging.FileHandler(f'./logs/{bot_config.LOGGING_FILENAME}')
 ])
 
 def to_lower(word: str):
