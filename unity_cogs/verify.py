@@ -8,6 +8,7 @@ import logging
 import re
 import praw
 from unity_util import bot_config
+from unity_services import universal_scammer_list as usl
 import sys
 
 with open('config.json', 'r') as f:
@@ -295,6 +296,8 @@ class Verify(commands.Cog):
         trades = await self.get_trades(user_data['discord']['id'])
         if trades:
             embed.add_field(name='Trades', value=trades, inline=False)
+        usl_status = await usl.fetch_usl_user_data(user_data['reddit']['name'])
+        embed.add_field(name="On USL", value="Yes!" if usl_status['banned'] else "No", inline=True)
         days_ago = dt.now() - dt.fromtimestamp(user_data['verified_at'])
         embed.set_footer(text=f"Verified {days_ago.days} days ago")
         return embed
