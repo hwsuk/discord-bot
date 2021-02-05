@@ -8,7 +8,8 @@
         "notes",
         "mot",
         "rendermeme",
-        "usl"
+        "usl",
+        "embedremover"
     ],
     "flairs": {
         "3+": {
