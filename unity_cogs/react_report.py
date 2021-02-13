@@ -31,24 +31,8 @@ class ReactReport(commands.Cog):
         if payload.emoji.name != "⚠️":
             return
 
-        # Get the message content (annoying)
-        guild = self.client.get_guild(payload.guild_id)
-
-        if not guild:
-            logging.warning(f"React Report: failed to fetch guild with ID {payload.guild_id}")
-            return
-
-        channel = guild.get_channel(payload.channel_id)
-
-        if not channel:
-            logging.warning(f"React Report: failed to fetch channel with ID {payload.channel_id}")
-            return
-
-        message = await channel.fetch_message(payload.message_id)
-
-        if not message:
-            logging.warning(f"React Report: failed to fetch message with ID {payload.message_id}")
-            return
+        # Get the required objects from the payload.
+        guild, channel, message = await self.fetch_objects_from_payload(payload)
 
         report_channel = guild.get_channel(bot_config.REPORT_CHANNEL_ID)
 
@@ -72,7 +56,7 @@ class ReactReport(commands.Cog):
         save_success = await self.save_report_data(data)
 
         if save_success:
-            await report_channel.send(embed=self.create_new_report_embed(message, payload, timestamp))
+            await report_channel.send(embed=self.create_new_report_embed(message, channel, payload, timestamp))
 
     # Save report data to mongo
     async def save_report_data(self, data: dict):
@@ -85,14 +69,37 @@ class ReactReport(commands.Cog):
         await db.reports.insert_one(data)
         return True
 
-    def create_new_report_embed(self, message: discord.Message, payload: discord.RawReactionActionEvent, timestamp: str):
+    async def fetch_objects_from_payload(self, payload: discord.RawReactionActionEvent):
+        guild = self.client.get_guild(payload.guild_id)
+
+        if not guild:
+            logging.warning(f"React Report: failed to fetch guild with ID {payload.guild_id}")
+            return
+
+        channel = guild.get_channel(payload.channel_id)
+
+        if not channel:
+            logging.warning(f"React Report: failed to fetch channel with ID {payload.channel_id}")
+            return
+
+        message = await channel.fetch_message(payload.message_id)
+
+        if not message:
+            logging.warning(f"React Report: failed to fetch message with ID {payload.message_id}")
+            return
+
+        return guild, channel, message
+
+    def create_new_report_embed(self, message: discord.Message, channel: discord.TextChannel, payload: discord.RawReactionActionEvent, timestamp: str):
         # Fetch the user who reported the message.
         member = message.guild.get_member(payload.user_id)
 
         embed = discord.Embed(title="New report created", colour=discord.Colour.orange())
         embed.description = message.clean_content
         embed.add_field(name="Reporter", value=member.mention)
+        embed.add_field(name="Channel", value=f"<#{channel.id}>")
         embed.add_field(name="Timestamp", value=timestamp)
+        embed.add_field(name="Message Link", value=f"[Here!]({message.jump_url})")
 
         return embed
 
