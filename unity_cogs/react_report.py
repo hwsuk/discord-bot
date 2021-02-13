@@ -58,6 +58,44 @@ class ReactReport(commands.Cog):
         if save_success:
             await report_channel.send(embed=self.create_new_report_embed(message, channel, payload, timestamp))
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        if payload.emoji.name != "⚠️":
+            return
+
+        # Get the required objects from the payload.
+        guild, channel, message = await self.fetch_objects_from_payload(payload)
+
+        report_retracted = True
+        for reaction in message.reactions:
+            if reaction.emoji.name == "⚠️":
+                report_retracted = False
+                break
+
+        if not report_retracted:
+            return
+
+        report_channel = guild.get_channel(bot_config.REPORT_CHANNEL_ID)
+
+        if not report_channel:
+            logging.warning(f"React Report: failed to fetch report output channel with ID {bot_config.REPORT_CHANNEL_ID}")
+            return
+
+        await self.remove_report_data(payload.message_id)
+        await report_channel.send(embed=self.create_retracted_report_embed(message))
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message: discord.Message):
+        report_channel = message.guild.get_channel(bot_config.REPORT_CHANNEL_ID)
+
+        if not report_channel:
+            logging.warning(f"React Report: failed to fetch report output channel with ID {bot_config.REPORT_CHANNEL_ID}")
+            return
+
+        has_removed = await self.remove_report_data(message.id)
+        if has_removed:
+            await report_channel.send(embed=self.create_deleted_report_embed(message))
+
     # Save report data to mongo
     async def save_report_data(self, data: dict):
         # Check if this message has been reported already.
@@ -67,6 +105,14 @@ class ReactReport(commands.Cog):
             return False
 
         await db.reports.insert_one(data)
+        return True
+
+    async def remove_report_data(self, message_id: int):
+        count = await db.reports.count_documents({"message_id": message_id})
+        if count == 0:
+            return False
+
+        await db.reports.delete_one({"message_id": message_id})
         return True
 
     async def fetch_objects_from_payload(self, payload: discord.RawReactionActionEvent):
@@ -103,6 +149,11 @@ class ReactReport(commands.Cog):
 
         return embed
 
+    def create_retracted_report_embed(self, message: discord.Message):
+        return discord.Embed(title="Report retracted", colour=discord.Colour.green(), description=message.clean_content)
+
+    def create_deleted_report_embed(self, message: discord.Message):
+        return discord.Embed(title="Reported message deleted", colour=discord.Colour.green(), description=message.clean_content)
 
 def setup(client):
     client.add_cog(ReactReport(client))
