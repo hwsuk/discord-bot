@@ -1,0 +1,7 @@
+[flake8]
+max-line-length = 127
+extend-ignore = E203, W503, E501, F524, F523
+exclude =
+    .git
+    env
+    .github
