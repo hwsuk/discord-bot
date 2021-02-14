@@ -8,7 +8,8 @@
         "notes",
         "mot",
         "usl",
-        "embedremover"
+        "embedremover",
+        "react_report"
     ],
     "flairs": {
         "3+": { "rid": "292033617461379084", "flairtext": "3+" },

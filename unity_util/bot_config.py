@@ -47,4 +47,6 @@ BUY_SELL_BACKUP_DM_CHANNEL_ID = int(get_env("BUY_SELL_BACKUP_DM_CHANNEL_ID", or_
 
 DVLA_API_KEY = get_env("DVLA_API_KEY", required=True)
 
+REPORT_CHANNEL_ID = int(get_env("REPORT_CHANNEL_ID", or_else="810214651433582633"))
+
 LOGGING_FILENAME = get_env("LOGGING_FILENAME", or_else=f'bot-{datetime.now().strftime("%m-%d-%Y-%H%M%S")}.log')

@@ -34,7 +34,7 @@ class Notes(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Feedback cog online')
+        print('Notes cog online')
 
 # Commands
 
