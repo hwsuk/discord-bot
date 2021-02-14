@@ -7,7 +7,6 @@ from discord.ext import commands
 
 from unity_util import bot_config
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="[%(levelname)s]\t %(name)s: %(message)s",

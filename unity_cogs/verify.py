@@ -10,8 +10,8 @@ from discord.ext import commands, tasks
 from unity_services import universal_scammer_list as usl
 from unity_util import bot_config
 from unity_util.bot_config import db
-from unity_util.menu import yes_or_no
 from unity_util.embed_helper import error_message
+from unity_util.menu import yes_or_no
 
 reddit = praw.Reddit(
     client_id=bot_config.PRAW_CLIENT_ID,

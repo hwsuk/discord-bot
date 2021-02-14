@@ -1,4 +1,5 @@
 import datetime
+import logging
 import math
 import re
 from datetime import datetime as dt
@@ -196,7 +197,8 @@ class Ebay(commands.Cog):
                 "ended_date": d["ended_date"],
                 "id": str(d["id"]),
             }
-        except:
+        except Exception as error:
+            logging.error(f"Error getting product info: {error}")
             return {}
 
     def parse_price(self, product):

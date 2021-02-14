@@ -110,7 +110,7 @@ class Limiter(commands.Cog):
 
         try:
             await dm_channel.send(content, embed=embed)
-        except:  # If the bot can't DM the user
+        except discord.Forbidden:  # If the bot can't DM the user
             backup_channel = self.client.get_channel(bot_config.BUY_SELL_BACKUP_DM_CHANNEL_ID)
             content = f"<@{author.id}> {content}"
             await backup_channel.send(content=content, embed=embed)
