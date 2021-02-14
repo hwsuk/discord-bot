@@ -1,5 +1,4 @@
 import logging
-import re
 import urllib.parse
 from typing import Tuple
 from urllib import parse
@@ -8,9 +7,7 @@ import discord
 import httpx
 from discord.ext import commands
 
-import unity_util.bot_config as bot_config
 from unity_util.menu import DEFAULT_CONTROLS, menu
-
 
 CEX_RED = 0xFF0000
 CEX_LOGO = "https://uk.webuy.com/_nuxt/74714aa39f40304c8fac8e7520cc0a35.png"
@@ -88,16 +85,8 @@ class Cex(commands.Cog):
             await ctx.send(embed=cex_embed)
             return
 
-        cex_embeds = [
-            self.make_cex_embed(item, f"{i + 1} of {len(cex_search)}")
-            for i, item in enumerate(cex_search)
-        ]
-        await menu(
-            ctx,
-            pages=cex_embeds,
-            controls=DEFAULT_CONTROLS,
-            timeout=180.0
-        )
+        cex_embeds = [self.make_cex_embed(item, f"{i + 1} of {len(cex_search)}") for i, item in enumerate(cex_search)]
+        await menu(ctx, pages=cex_embeds, controls=DEFAULT_CONTROLS, timeout=180.0)
 
     # Helper functions
 
@@ -161,7 +150,10 @@ class Cex(commands.Cog):
         return embed
 
     async def no_results(self, ctx, search_term: str):
-        embed = discord.Embed(colour=CEX_RED, description=f"No products found for `{search_term.replace('`', '``')}`",)
+        embed = discord.Embed(
+            colour=CEX_RED,
+            description=f"No products found for `{search_term.replace('`', '``')}`",
+        )
         embed.set_author(name="No results 🙁", icon_url=CEX_LOGO)
         await ctx.send(embed=embed)
 

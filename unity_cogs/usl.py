@@ -1,13 +1,11 @@
 import logging
 import re
-import sys
 
 import discord
 from discord.ext import commands
 
 from unity_services import universal_scammer_list as usl
 from unity_util.embed_helper import error_message
-
 
 EMBED_BANNED_COLOUR = 0xB00E0E
 EMBED_NOT_BANNED_COLOUR = 0x3CB00E
@@ -39,7 +37,7 @@ class UniversalScammerList(commands.Cog):
             await error_message(
                 ctx,
                 "Invalid username format. Reddit usernames can consist of alphanumeric characters, hyphens and underscores only.",
-                cmd_error=False
+                cmd_error=False,
             )
             return
 
@@ -52,7 +50,7 @@ class UniversalScammerList(commands.Cog):
             logging.warning(f"Error while querying USL API: {error}")
             await error_message(
                 ctx,
-                "Something went wrong while querying the USL database. Please try again later, or contact the moderators for assistance."
+                "Something went wrong while querying the USL database. Please try again later, or contact the moderators for assistance.",
             )
 
     def make_embed(self, data: dict) -> discord.Embed:

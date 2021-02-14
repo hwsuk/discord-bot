@@ -5,7 +5,7 @@ from discord.ext import commands
 async def error_message(ctx: commands.Context, error_msg: str, cmd_error: bool = True):
     """Send an error message to the channel"""
     embed = discord.Embed(
-        title=f"Error",
+        title="Error",
         description=f"Error in command {ctx.command.name}: `{error_msg}`" if cmd_error else error_msg,
         colour=discord.Colour.red(),
     )
