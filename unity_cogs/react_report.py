@@ -8,7 +8,7 @@ from discord.ext import commands
 from unity_util import bot_config
 
 
-REPORT_EMOJI = "⚠"
+REPORT_EMOJI = "⚠️"
 
 mongo = motor.motor_asyncio.AsyncIOMotorClient(host=bot_config.MONGODB_HOST, port=int(
     bot_config.MONGODB_PORT), replicaSet="rs01", username=bot_config.MONGODB_USERNAME, password=bot_config.MONGODB_PASSWORD, authSource=bot_config.MONGODB_DATABASE, authMechanism='SCRAM-SHA-1')
