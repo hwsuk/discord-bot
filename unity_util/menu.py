@@ -58,9 +58,7 @@ async def menu(
     # Check that pages are of same type
     if not isinstance(pages[0], (discord.Embed, str)):
         raise RuntimeError("Pages must be of type discord.Embed or str")
-    if not all(isinstance(x, discord.Embed) for x in pages) and not all(
-        isinstance(x, str) for x in pages
-    ):
+    if not all(isinstance(x, discord.Embed) for x in pages) and not all(isinstance(x, str) for x in pages):
         raise RuntimeError("All pages must be of the same type")
     # Check that passed functions are asynchronous
     for key, value in controls.items():
@@ -126,9 +124,7 @@ async def menu(
         )
 
 
-def start_adding_reactions(
-    message: discord.Message, emojis: Iterable[_ReactableEmoji]
-) -> asyncio.Task:
+def start_adding_reactions(message: discord.Message, emojis: Iterable[_ReactableEmoji]) -> asyncio.Task:
     """
     Start adding reactions to a message.
 
@@ -328,9 +324,7 @@ async def yes_or_no(
             return (True, False)[index]
 
 
-async def get_user_reply(
-    ctx: commands.Context, timeout: float = 180.0
-) -> Union[str, None]:
+async def get_user_reply(ctx: commands.Context, timeout: float = 180.0) -> Union[str, None]:
     """
     Function for getting a reply from a user
 
@@ -349,9 +343,7 @@ async def get_user_reply(
         if the wait_for action times out
     """
     try:
-        msg = await ctx.bot.wait_for(
-            "message", check=with_channel(ctx), timeout=timeout
-        )
+        msg = await ctx.bot.wait_for("message", check=with_channel(ctx), timeout=timeout)
     except asyncio.TimeoutError:
         return None
     else:

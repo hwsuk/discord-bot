@@ -29,8 +29,7 @@ intents = discord.Intents(
     guild_reactions=True,
     dm_reactions=True,
 )
-client = commands.Bot(
-    command_prefix=bot_config.DISCORD_PREFIX, intents=intents)
+client = commands.Bot(command_prefix=bot_config.DISCORD_PREFIX, intents=intents)
 
 
 @client.event

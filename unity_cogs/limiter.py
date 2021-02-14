@@ -1,17 +1,14 @@
+import asyncio
+import datetime
+import logging
+
 import discord
+import humanize
 from discord.ext import commands
 from discord.ext.commands import has_permissions
-import datetime
-import humanize
-from unity_util import bot_config
-import logging
-import asyncio
-import sys
 
-logging.basicConfig(level=logging.INFO, format="[%(levelname)s]\t %(name)s: %(message)s", handlers=[
-    logging.StreamHandler(sys.stdout),
-    logging.FileHandler(f'./logs/{bot_config.LOGGING_FILENAME}')
-])
+from unity_util import bot_config
+
 
 class Limiter(commands.Cog):
     def __init__(self, client):
@@ -21,12 +18,12 @@ class Limiter(commands.Cog):
     # Events
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Buy-sell-trade post limiter cog online')
+        logging.info("Buy-sell-trade post limiter cog online")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         # we do not want the bot to reply to itself or other bots
-        if message.author.bot == True or message.author.id == self.client.user.id:
+        if message.author.bot or message.author.id == self.client.user.id:
             return
 
         # Only read messages in the right channel
@@ -36,7 +33,7 @@ class Limiter(commands.Cog):
         author = message.author
         if author.id in self.whitelisted_users:
             return
-        content = message.content # Save this
+        content = message.content  # Save this
         time_limit = datetime.datetime.now() - datetime.timedelta(seconds=bot_config.BUY_SELL_LIMIT_SECONDS)
         messages = await message.channel.history(after=time_limit).flatten()
         for past_message in messages:
@@ -62,11 +59,11 @@ class Limiter(commands.Cog):
         if ctx.invoked_subcommand is None:
             pass
 
-    @limiter.command()
+    @limiter.command(aliases=["allow"])
     async def whitelist(self, ctx, member: discord.Member, seconds: int):
         """Allows a user to post in the buy-sell-trade channel within the slowmode time"""
         desc = f"{member.mention} you can now post in <#{bot_config.BUY_SELL_CHANNEL_ID}> for {str(datetime.timedelta(seconds=int(seconds)))}"
-        embed = discord.Embed(title=f"Whitelisted user", description=desc, colour=member.colour)
+        embed = discord.Embed(title="Whitelisted user", description=desc, colour=member.colour)
         await ctx.send(embed=embed)
         self.whitelisted_users.append(member.id)
         await asyncio.sleep(seconds)
@@ -79,12 +76,24 @@ class Limiter(commands.Cog):
         user = await self.client.fetch_user(author.id)
         embed = discord.Embed(description=deleted_content, colour=author.colour)
         if author.avatar is None:
-            embed.set_author(name=author.display_name, icon_url = f"https://cdn.discordapp.com/embed/avatars/{user.discriminator}.png")
+            embed.set_author(
+                name=author.display_name,
+                icon_url=f"https://cdn.discordapp.com/embed/avatars/{user.discriminator}.png",
+            )
         else:
-            embed.set_author(name=author.display_name, icon_url = f"https://cdn.discordapp.com/avatars/{author.id}/{author.avatar}.png")
+            embed.set_author(
+                name=author.display_name,
+                icon_url=f"https://cdn.discordapp.com/avatars/{author.id}/{author.avatar}.png",
+            )
         return embed
 
-    async def send_info_message(self, author: discord.Member, channel_id: int, deleted_content: str, creation_time: datetime):
+    async def send_info_message(
+        self,
+        author: discord.Member,
+        channel_id: int,
+        deleted_content: str,
+        creation_time: datetime,
+    ):
         if author.dm_channel is None:
             await author.create_dm()
 
@@ -101,10 +110,11 @@ class Limiter(commands.Cog):
 
         try:
             await dm_channel.send(content, embed=embed)
-        except: # If the bot can't DM the user
+        except:  # If the bot can't DM the user
             backup_channel = self.client.get_channel(bot_config.BUY_SELL_BACKUP_DM_CHANNEL_ID)
             content = f"<@{author.id}> {content}"
             await backup_channel.send(content=content, embed=embed)
+
 
 def setup(client):
     client.add_cog(Limiter(client))
