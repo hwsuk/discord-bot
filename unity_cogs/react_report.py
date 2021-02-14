@@ -8,6 +8,8 @@ from discord.ext import commands
 from unity_util import bot_config
 
 
+REPORT_EMOJI = "⚠"
+
 mongo = motor.motor_asyncio.AsyncIOMotorClient(host=bot_config.MONGODB_HOST, port=int(
     bot_config.MONGODB_PORT), replicaSet="rs01", username=bot_config.MONGODB_USERNAME, password=bot_config.MONGODB_PASSWORD, authSource=bot_config.MONGODB_DATABASE, authMechanism='SCRAM-SHA-1')
 db = mongo[bot_config.MONGODB_DATABASE]
@@ -28,7 +30,10 @@ class ReactReport(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.emoji.name != "⚠️":
+        if not payload.guild_id:
+            return
+        
+        if payload.emoji.name != REPORT_EMOJI:
             return
 
         # Get the required objects from the payload.
@@ -60,20 +65,18 @@ class ReactReport(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        if payload.emoji.name != "⚠️":
+        if not payload.guild_id:
+            return
+
+        if payload.emoji.name != REPORT_EMOJI:
             return
 
         # Get the required objects from the payload.
         guild, channel, message = await self.fetch_objects_from_payload(payload)
 
-        report_retracted = True
         for reaction in message.reactions:
-            if reaction.emoji.name == "⚠️":
-                report_retracted = False
-                break
-
-        if not report_retracted:
-            return
+            if reaction.emoji.name == REPORT_EMOJI:
+                return
 
         report_channel = guild.get_channel(bot_config.REPORT_CHANNEL_ID)
 
