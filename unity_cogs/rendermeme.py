@@ -9,7 +9,6 @@ IMAGE_LINKS = [
     "https://tenor.com/view/nobody-cares-nobody-asked-who-asked-find-who-asked-searching-gif-19968984",
     "https://tenor.com/view/among-us-who-asked-gif-18850795",
     "https://tenor.com/view/bean-dance-crazy-aye-dats-fr-crazy-hoe-now-show-me-one-person-who-asked-gif-16195074",
-    "https://tenor.com/view/looney-tunes-telescope-searching-wile-e-coyote-binoculars-gif-15106557",
     "https://tenor.com/view/who-asked-who-tf-asked-nasa-rocket-bull-crap-who-in-the-heck-asked-gif-18488733",
     "https://tenor.com/view/who-asked-gif-18047968",
     "https://cdn.discordapp.com/attachments/292035708779102208/800517700501372989/image0.gif",
@@ -27,6 +26,7 @@ IMAGE_LINKS = [
     "https://cdn.discordapp.com/attachments/292035708779102208/800518596509040640/image1.gif",
     "https://cdn.discordapp.com/attachments/292035708779102208/800518596925063168/image2.gif",
     "https://cdn.discordapp.com/attachments/292035708779102208/800519407658467328/image0.gif",
+    "https://tenor.com/view/who-the-fuck-asked-maximum-gif-20033803"
 ]
 
 

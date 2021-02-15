@@ -1,28 +1,36 @@
+import json
+import discord
+from discord.ext import commands, tasks
+import asyncio
+import motor.motor_asyncio
+from datetime import datetime as dt
 import logging
 import re
-from datetime import datetime as dt
-from typing import Union
-
-import discord
 import praw
-from discord.ext import commands, tasks
-
+from unity_util import bot_config
 from unity_services import universal_scammer_list as usl
 from unity_util import bot_config
 from unity_util.bot_config import db
 from unity_util.embed_helper import error_message
 from unity_util.menu import yes_or_no
 
-reddit = praw.Reddit(
-    client_id=bot_config.PRAW_CLIENT_ID,
-    client_secret=bot_config.PRAW_CLIENT_SECRET,
-    username=bot_config.PRAW_USERNAME,
-    password=bot_config.PRAW_PASSWORD,
-    user_agent=bot_config.PRAW_USER_AGENT,
-)
+with open('config.json', 'r') as f:
+    conf = json.load(f)
 
+reddit = praw.Reddit(client_id=bot_config.PRAW_CLIENT_ID, client_secret=bot_config.PRAW_CLIENT_SECRET,
+                     username=bot_config.PRAW_USERNAME, password=bot_config.PRAW_PASSWORD, user_agent=bot_config.PRAW_USER_AGENT)
+
+mongo = motor.motor_asyncio.AsyncIOMotorClient(host=bot_config.MONGODB_HOST, port=int(
+    bot_config.MONGODB_PORT), replicaSet="rs01", username=bot_config.MONGODB_USERNAME, password=bot_config.MONGODB_PASSWORD, authSource=bot_config.MONGODB_DATABASE, authMechanism='SCRAM-SHA-1')
+db = mongo[bot_config.MONGODB_DATABASE]
+
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s]\t %(name)s: %(message)s", handlers=[
+    logging.StreamHandler(sys.stdout),
+    logging.FileHandler(f'./logs/{bot_config.LOGGING_FILENAME}')
+])
 
 class Verify(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.monitor_db.start()
@@ -33,7 +41,7 @@ class Verify(commands.Cog):
     # Events
     @commands.Cog.listener()
     async def on_ready(self):
-        logging.info("Verify cog online")
+        print('Verify cog online')
         try:
             n = await db.queue.count_documents({})
             if n == 0:
@@ -41,45 +49,58 @@ class Verify(commands.Cog):
             data = db.queue.find()
             data.limit(n)
             async for document in data:
-                user = await db.users.find_one({"_id": document["ref"]})
-                await self.set_verified(user["discord"]["id"])
-                await db.queue.find_one_and_delete({"_id": document["_id"]})
-                logging.info(f"Verified user: {user}")
+                user = await db.users.find_one({"_id": document['ref']})
+                await self.set_verified(user['discord']['id'])
+                await db.queue.find_one_and_delete({'_id': document['_id']})
+                logging.info(f'Verified user: {user}')
         except Exception as err:
-            logging.error(f"ERROR MONITORING DB: {err}")
+            logging.error(f'ERROR MONITORING DB: {err}')
+
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         data = await db.users.find_one({"discord.id": str(member.id)})
 
-        if data and data.get("verified"):  # Check if user has verified online first
+        if(data and data.get("verified")):  # Check if user has verified online first
             await self.set_verified(member.id)
 
     @commands.Cog.listener()
     async def on_member_ban(self, member: discord.Member):
         await db.users.find_one_and_update({"discord.id": member.id}, {"verified": False, "banned": True})
-        logging.info(f'BANNED {member.name + "#" + member.discriminator} ON {member.guild.name}')
+        logging.info(
+            f'BANNED {member.name + "#" + member.discriminator} ON {member.server.name}')
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild, user):
         await db.users.find_one_and_update({"discord.id": user.id}, {"banned": False})
-        logging.info(f"UNBANNED {user.name}#{user.discriminator} ON {guild.name}")
+        logging.info(f'UNBANNED {user.name}#{user.discriminator} ON {guild.name}')
 
     # Commands
 
-    @commands.command(aliases=["verification"])
+    @commands.command(aliases=['verification'])
     async def verify(self, ctx):
         """Instructions on how to verify"""
-        embed = discord.Embed(title="Verify here!", url="https://verify.hardwareswap.uk")
+        embed = discord.Embed(
+            title='Verify here!',
+            url='https://verify.hardwareswap.uk'
+        )
         await ctx.send(embed=embed)
 
     @commands.command()
     async def whois(self, ctx, user: str):
-        """Search by Discord username, ID, mention or Reddit username for a verified user"""
-        user_data = await self.get_user(str(ctx.message.mentions[0].id) if ctx.message.mentions else user)
+        """Search by Discord username, ID, mention or Reddit username for a verified hwsuk user"""
+        # Syntax: !whois [username]
+        # Examples: !whois issythegurl
+        # !whois @issy#4200
+        # !whois 377212919068229633
+        # !whois u/issythegurl
+        if len(ctx.message.mentions) == 1:
+            user_data = await self.get_user(str(ctx.message.mentions[0].id))
+        else:
+            user_data = await self.get_user(user)
         if not user_data:
-            user = user.replace("`", "``")
-            embed = discord.Embed(title="Whois results:", description=f"No results found for {user}")
+            user = user.replace('`', '``')
+            embed = discord.Embed(title = "Whois results:", description=f"No results found for {user}")
             await ctx.send(embed=embed)
             return
         else:
@@ -91,43 +112,44 @@ class Verify(commands.Cog):
         """Edit a user's trade role/flair"""
         if int(bot_config.DISCORD_UPDATER_ROLE) not in [i.id for i in ctx.message.author.roles]:
             desc = "Hey, looks like you don't have permission to do this!\nPlease contact a mod if you feel should have this permission"
-            await error_message(ctx, desc, False)
+            embed = discord.Embed(description=desc, colour=ctx.guild.me.colour)
+            await ctx.send(embed=embed)
             return
 
-        user_data = await self.get_user(str(ctx.message.mentions[0].id) if ctx.message.mentions else user)
+        if len(ctx.message.mentions) == 1:
+            user_data = await self.get_user(str(ctx.message.mentions[0].id))
+        else:
+            user_data = await self.get_user(user)
 
         if not user_data:
-            user = user.replace("`", "``")
+            user = user.replace('`', '``')
             embed = discord.Embed(description=f"No results found for {user}")
             await ctx.send(embed=embed)
             return
 
-        flair_data = await db.verify.find_one(
-            {
-                "guild_id": ctx.guild_id if ctx.guild else bot_config.DISCORD_SERVER_ID,
-                "flair_text": flair,
-            }
-        )
-        if not flair_data:
+        if flair not in conf['flairs']:
             embed = discord.Embed(
-                description=f"Flair {flair} not found 🙁".replace("`", "``"),
-                color=ctx.guild.me.colour,
+                description=f"Flair {flair} not found 🙁".replace('`', '``'),
+                color=ctx.guild.me.colour
             )
             await ctx.send(embed=embed)
             return
 
         # remove old role
-        await self.remove_trades(user_data["discord"]["id"])
+        await self.remove_trades(user_data['discord']['id'])
         # set flair and new role
-        if await self.set_trade_flair(user_data, flair_data["flair_text"]):
+        if await self.set_trade_flair(user_data, flair) == True:
             desc = [f"✅ Flair set successfully for {user_data['reddit']['name']}"]
         else:
-            desc = [f"❌ Error setting trade flair for {user_data['reddit']['name']}"]
+            desc = [
+                f"❌ Error setting trade flair for {user_data['reddit']['name']}"]
         # Set the discord role
-        if await self.set_trade_role(user_data, flair_data):
-            desc.append(f"✅ Role set successfully for <@{user_data['discord']['id']}>")
+        if await self.set_trade_role(user_data, flair) == True:
+            desc.append(
+                f"✅ Role set successfully for <@{user_data['discord']['id']}>")
         else:
-            desc.append(f"❌ Error setting trade role for <@{user_data['discord']['id']}>")
+            desc.append(
+                f"❌ Error setting trade role for <@{user_data['discord']['id']}>")
 
         embed = discord.Embed(description="\n".join(desc))
         await ctx.send(embed=embed)
@@ -138,184 +160,209 @@ class Verify(commands.Cog):
         user_data = await self.get_user(str(ctx.author.id))
         if not user_data:
             embed = discord.Embed(
-                description="Looks like you're not verified. Please [verify here!](https://verify.hardwareswap.uk)"
-            )
+                description="Looks like you're not verified. Please [verify here!](https://verify.hardwareswap.uk)")
             embed.set_author(name="User not found 🙁")
             await ctx.send(embed=embed)
             return
-        embed = discord.Embed(title="Verification status")
-        embed.add_field(name="Discord", value=f"<@{user_data['discord']['id']}>", inline=True)
-        embed.add_field(name="Reddit", value=f"u/{user_data['reddit']['name']}", inline=True)
-        embed.add_field(name="Verified", value=user_data["verified"], inline=True)
-        days_ago = dt.now() - dt.fromtimestamp(user_data["verified_at"])
+        embed = discord.Embed(
+            title="Verification status"
+        )
+        embed.add_field(
+            name="Discord",
+            value=f"<@{user_data['discord']['id']}>",
+            inline=True
+        )
+        embed.add_field(
+            name="Reddit",
+            value=f"u/{user_data['reddit']['name']}",
+            inline=True
+        )
+        embed.add_field(
+            name="Verified",
+            value=user_data['verified'],
+            inline=True
+        )
+        days_ago = dt.now() - dt.fromtimestamp(user_data['verified_at'])
         embed.set_footer(text=f"Verified {days_ago.days} days ago")
         await ctx.send(embed=embed)
 
-    @commands.command(name="removeuser", aliases=["remove_user"])
+    @commands.command(name='removeuser', aliases=['remove_user'])
     async def remove_user(self, ctx, user: str):
         """Removes a user from the verification database"""
         if int(bot_config.DISCORD_UPDATER_ROLE) not in [i.id for i in ctx.message.author.roles]:
-            desc = "Hey, looks like you don't have permission to do this!"
-            desc += "\nPlease contact a mod if you feel should have this permission"
+            desc = "Hey, looks like you don't have permission to do this!\nPlease contact a mod if you feel should have this permission"
             await ctx.send(embed=discord.Embed(description=desc))
             return
-
-        user_data = await self.get_user(str(ctx.message.mentions[0].id) if ctx.message.mentions else user)
-        if not user_data:
-            user = user.replace("`", "``")
+        if len(ctx.message.mentions) == 1:
+            user_data = await self.get_user(str(ctx.message.mentions[0].id))
+        else:
+            user_data = await self.get_user(user)
+        if user_data == None:
+            user = user.replace('`', '``')
             embed = discord.Embed(description=f"No results found for `{user}`")
             embed.set_author(name="User not found")
             await ctx.send(embed=embed)
             return
         embed = await self.make_whois_embed(user_data)
         await ctx.send(embed=embed)
-        message = await ctx.send("Are you sure you want to remove this user from the database?")
-        confirmation = yes_or_no(ctx, message)
-        if not confirmation:
-            await message.clear_reactions()
-            return
+        message_object = await ctx.send('Are you sure you want to remove this user from the database?')
+        emojis = ['✅', '❌']
+        for i in emojis:
+            await message_object.add_reaction(i)
+        def reaction_check(reaction, user):
+            return (user == ctx.author) and (reaction.message.id == message_object.id) and (reaction.emoji in emojis)
         try:
-            await db.users.delete_one({"discord.id": f"{user_data['discord']['id']}"})
-            logging.info(f"Removed user {user_data['discord']['username']} from the database")
-            guild = self.client.get_guild(int(bot_config.DISCORD_SERVER_ID))
-            member = guild.get_member(int(user_data["discord"]["id"]))
-            verified_role = guild.get_role(int(bot_config.DISCORD_VERIFIED_ROLE))
-            await member.remove_roles(verified_role)
-            embed = discord.Embed(description=f"User <@{user_data['discord']['id']}> removed from the database successfully 🤠")
-            await ctx.send(embed=embed)
-        except Exception as err:
-            logging.error(f"ERROR REMOVING USER: {err}")
-            await ctx.send(
-                "Couldn't remove the user from the database for some reason. Please consult the logs for more details"
-            )
+            reaction, user = await self.client.wait_for('reaction_add', timeout=120.0, check=reaction_check)
+        except asyncio.TimeoutError:
+            try:
+                await message_object.clear_reactions()
+            except:
+                pass
+            return
+        else:
+            # The user has reacted with an emoji in the list, let's find out which one
+            if reaction.emoji == '❌':
+                await message_object.clear_reactions()
+                return
+            if reaction.emoji == '✅':  # Execute order 66
+                try:
+                    await db.users.delete_one({"discord.id": f"{user_data['discord']['id']}"})
+                    logging.info(f"Removed user {user_data['discord']['username']} from the database")
+                    server = self.client.get_guild(int(bot_config.DISCORD_SERVER_ID))
+                    member = server.get_member(int(user_data['discord']['id']))
+                    verified_role = server.get_role(int(bot_config.DISCORD_VERIFIED_ROLE))
+                    await member.remove_roles(verified_role)
+                    embed = discord.Embed(description=f"User <@{user_data['discord']['id']}> removed from the database successfully 🤠")
+                    await ctx.send(embed=embed)
+                except Exception as err:
+                    logging.error(f"ERROR REMOVING USER: {err}")
+                    await ctx.send("Couldn't remove the user from the database for some reason. Please consult the logs for more details")
 
     # Helper functions
 
     # Useful for verification event
     async def set_verified(self, member_id):
         # Get guild object from ID
-        guild = self.client.get_guild(int(bot_config.DISCORD_SERVER_ID))
+        server = self.client.get_guild(int(bot_config.DISCORD_SERVER_ID))
         # Get role object of verified role by ID
-        role = guild.get_role(int(bot_config.DISCORD_VERIFIED_ROLE))
+        role = server.get_role(int(bot_config.DISCORD_VERIFIED_ROLE))
         # Get member object by discord user ID
-        member = guild.get_member(int(member_id))
+        member = server.get_member(int(member_id))
 
         if member:  # Someone might verify before they join the server
             try:
                 await member.add_roles(role)  # Add user as verified
                 # Send the verified message
                 await member.send("Congratulations! You are now verified!")
-                logging.info(f"VERIFIED {member.name}#{member.discriminator} ON {guild.name}")
+                logging.info(
+                    f'VERIFIED {member.name}#{member.discriminator} ON {server.name}')
 
             except Exception as e:
                 # Log an error if there was a problem
-                logging.error(f"ERROR ADDING ROLE FOR {member.name}#{member.discriminator} IN {guild.name}: {e}")
+                logging.error(
+                    f'ERROR ADDING ROLE FOR {member.name}#{member.discriminator} IN {server.name}: {e}')
 
     # Useful for whois and editflair
-    async def get_user(self, user: str, user_type: str = "") -> dict:
-        discord_discrim_regex = re.compile(r"[\w]*#[0-9]{4}")  # eg. issy#4200
+    async def get_user(self, user: str) -> dict:
+        discord_discrim_regex = re.compile("[\w]*#[0-9]{4}")  # eg. issy#4200
         if user.isdigit() and len(user) > 15:  # eg. 377212919068229633
-            user_type = "discord.id"
+            user_type = 'discord.id'
         # eg. /u/issythegurl or u/issythegurl
-        elif user.startswith("u/") or user.startswith("/u/"):
-            user = user.split("u/")[1]
-            user_type = "reddit.name"
-        elif discord_discrim_regex.match(user):
-            user_type = "discord.name"
-        if not user_type:
+        elif user.startswith('u/') or user.startswith('/u/'):
+            user = user.split('u/')[1]
+            user_type = 'reddit.name'
+        elif discord_discrim_regex.match(user) != None:
+            user_type = 'discord.name'
+        else:
             # Guess if it's a Reddit or Discord user
-            for i in ["reddit.name", "discord.username"]:
+            for i in ['reddit.name','discord.username']:
                 data = await db.users.find_one({f"{i}": {"$regex": f"^{user}$", "$options": "i"}})
                 if data:
                     return data
-        return await db.users.find_one({f"{user_type}": {"$regex": f"^{user}$", "$options": "i"}})
+                else:
+                    continue
+            if not data:
+                return {}
+        data = await db.users.find_one({f"{user_type}": {"$regex": f"^{user}$", "$options": "i"}})
+        if data:
+            return data
+        return {}
 
     # Used for the whois commmand
     async def make_whois_embed(self, user_data: dict) -> discord.Embed:
         embed = discord.Embed()
-        embed.set_author(name="Whois results:")
-        embed.add_field(name="Discord", value=f"<@{user_data['discord']['id']}>", inline=True)
+        embed.set_author(name='Whois results:')
         embed.add_field(
-            name="Reddit",
-            value=f"[u/{user_data['reddit']['name']}](https://www.reddit.com/user/{user_data['reddit']['name']})",
-            inline=True,
-        )
-        trades = await self.get_trades(user_data["discord"]["id"])
+            name='Discord', value=f"<@{user_data['discord']['id']}>", inline=True)
+        embed.add_field(
+            name='Reddit', value=f"[u/{user_data['reddit']['name']}](https://www.reddit.com/user/{user_data['reddit']['name']})", inline=True)
+        trades = await self.get_trades(user_data['discord']['id'])
         if trades:
-            embed.add_field(name="Trades", value=trades, inline=False)
-        usl_status = await usl.fetch_usl_user_data(user_data["reddit"]["name"])
-        embed.add_field(name="On USL", value="Yes" if usl_status["banned"] else "No", inline=True)
-        days_ago = dt.now() - dt.fromtimestamp(user_data["verified_at"])
+            embed.add_field(name='Trades', value=trades, inline=False)
+        usl_status = await usl.fetch_usl_user_data(user_data['reddit']['name'])
+        embed.add_field(name="On USL", value="Yes!" if usl_status['banned'] else "No", inline=True)
+        days_ago = dt.now() - dt.fromtimestamp(user_data['verified_at'])
         embed.set_footer(text=f"Verified {days_ago.days} days ago")
         return embed
 
     # Used in for whois and editflair
-    async def get_trades(self, discord_id: str) -> Union[str, None]:
+    async def get_trades(self, discord_id: str) -> str:
         """Get the trade role of a member"""
+        trade_roles = [conf['flairs'][i]['rid'] for i in conf['flairs']]
         guild = self.client.get_guild(int(bot_config.DISCORD_SERVER_ID))
         member = guild.get_member(int(discord_id))
-        member_trade_roles = await db.verify.find(
-            {
-                "guild_id": member.guild.id,
-                "role_id": {"$in": [i.id for i in member.roles]},
-            }
-        ).to_list()
+        # returns all roles in member, lowest in hierarchy first
+        member_roles = member.roles
+        member_roles.reverse()  # get highest trade roles first
+        member_trade_roles = [i for i in member_roles if i.id in trade_roles]
         if not member_trade_roles:
             return
         elif len(member_trade_roles) == 1:
             return member_trade_roles[0].name
-        else:  # If member_trade_roles > 1
-            sorted_member_trade_roles = sorted(
-                [i for i in member.roles if i.id in [i["role_id"] for i in member_trade_roles]],
-                key=lambda role: role.position,
-                reverse=True,
-            )
-            sorted_member_trade_roles = sorted(
-                filter(lambda role: role in member_trade_roles, member.roles), key=lambda role: role.position, reverse=True
-            )
-            await member.remove_roles(sorted_member_trade_roles[1:])
+        else: # If member_trade_roles > 1
+            await member.remove_roles(member_trade_roles[1:])
             return member_trade_roles[0].name
 
     # Used in editflair
     async def remove_trades(self, discord_id: int):
         """Remove all trade roles from a member"""
         # Get guild object from ID
-        guild = self.client.get_guild(int(bot_config.DISCORD_SERVER_ID))
+        server = self.client.get_guild(int(bot_config.DISCORD_SERVER_ID))
         # Get member object by discord user ID
-        member = guild.get_member(int(discord_id))
-        trade_roles = await db.verify.find({"guild_id": guild.id}).to_list()
-        trade_roles = [x["role_id"] for x in trade_roles]
-        member_trade_roles = filter(lambda role: role.id in trade_roles, member.roles)
+        member = server.get_member(int(discord_id))
+        trade_roles = [conf['flairs'][i]['rid'] for i in conf['flairs']]
+        member_trade_roles = [i for i in member.roles if i.id in trade_roles]
         if member_trade_roles:
-            await member.remove_roles(member_trade_roles)
+            for role in member_trade_roles:
+                await member.remove_roles(role)
 
     # Useful for editflair
     async def set_trade_flair(self, user_data, flair):
         try:
             flair_text = f"{flair} Trades"
-            reddit.subreddit("hardwareswapuk").flair.set(
-                user_data["reddit"]["name"],
-                flair_text,
-                css_class=flair_text.replace("+", ""),
-            )
+            reddit.subreddit("hardwareswapuk").flair.set(user_data["reddit"]["name"], flair_text, css_class=flair_text.replace("+", ""))
         except Exception as err:
-            logging.error(f"ERROR SETTING FLAIR FOR {user_data['reddit']['name']}: {err}")
+            logging.error(
+                f"ERROR SETTING FLAIR FOR {user_data['reddit']['name']}: {err}"
+            )
             return False
         return True
 
     # Useful for editflair
     async def set_trade_role(self, user_data, flair):
         # Get guild object from ID
-        guild = self.client.get_guild(int(bot_config.DISCORD_SERVER_ID))
+        server = self.client.get_guild(int(bot_config.DISCORD_SERVER_ID))
         # Get role object of verified role by ID
-        role = guild.get_role(flair["role_id"])
+        role = server.get_role(conf['flairs'][flair]['rid'])
         # Get member object by discord user ID
-        member = guild.get_member(int(user_data["discord"]["id"]))
+        member = server.get_member(int(user_data['discord']['id']))
         try:
             await member.add_roles(role)
             return True
         except Exception as err:
-            logging.error(f"ERROR ADDING ROLE FOR {member.name}#{member.discriminator} IN {guild.name}: {err}")
+            logging.error(
+                f"ERROR ADDING ROLE FOR {member.name}#{member.discriminator} IN {server.name}: {err}"
+            )
             return False
 
     # Tasks
@@ -325,16 +372,17 @@ class Verify(commands.Cog):
         """Monitor DB for changes"""
         try:
             n = await db.queue.count_documents({})
-            if not n:
+            if n == 0:
                 return
-            async for document in db.queue.find():
-                user = await db.users.find_one({"_id": document["ref"]})
-                await self.set_verified(user["discord"]["id"])
-                await db.queue.find_one_and_delete({"_id": document["_id"]})
-                logging.info(f"Verified user: {user}")
-        except Exception as error:
-            logging.error(f"ERROR MONITORING DB: {error}")
-
+            data = db.queue.find()
+            data.limit(n)
+            async for document in data:
+                user = await db.users.find_one({"_id": document['ref']})
+                await self.set_verified(user['discord']['id'])
+                await db.queue.find_one_and_delete({'_id': document['_id']})
+                logging.info(f'Verified user: {user}')
+        except Exception as err:
+            logging.error(f'ERROR MONITORING DB: {err}')
 
 def setup(client):
     client.add_cog(Verify(client))

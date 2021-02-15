@@ -45,12 +45,14 @@ class Notes(commands.Cog):
             await error_message(ctx, "No notes found for this user", cmd_error=False)
             return
         elif len(notes) == 1:
-            embed = self.make_note_embed(note=notes[0], colour=ctx.guild.me.colour)
+            embed = self.make_note_embed(
+                note=notes[0], colour=ctx.guild.me.colour)
             await ctx.send(embed=embed)
             return
 
         embeds = [
-            self.make_note_embed(notes[i], {"current": i, "max": len(notes) - 1}, ctx.guild.me.colour)
+            self.make_note_embed(
+                notes[i], {"current": i, "max": len(notes) - 1}, ctx.guild.me.colour)
             for i in range(len(notes))
         ]
         embeds.reverse()  # Sort newest first
@@ -94,7 +96,8 @@ class Notes(commands.Cog):
             return
         note = await db.notes.find_one({"hash": note_hash})
         if not note:
-            embed = discord.Embed(description="❌ No note found with this hash", colour=ctx.guild.me.colour)
+            embed = discord.Embed(
+                description="❌ No note found with this hash", colour=ctx.guild.me.colour)
             await ctx.send(embed=embed)
             return
         embed = self.make_note_embed(note=note, colour=ctx.guild.me.colour)
@@ -154,11 +157,14 @@ class Notes(commands.Cog):
         content = f"**Notes for <@{note['user']}>**\n{note['content']}"
         embed = discord.Embed(description=content, colour=colour)
         date = dt.fromtimestamp(note["date_added"])
-        embed.add_field(name="Date Added", value=f"{date.day}/{date.month}/{date.year}", inline=True)
-        embed.add_field(name="Added by", value=f"<@{note['added_by']}>", inline=True)
+        embed.add_field(
+            name="Date Added", value=f"{date.day}/{date.month}/{date.year}", inline=True)
+        embed.add_field(name="Added by",
+                        value=f"<@{note['added_by']}>", inline=True)
         embed.add_field(name="Hash", value=f"`{note['hash']}`", inline=True)
         if index:
-            embed.set_footer(text=f"{index['current'] + 1} of {index['max'] + 1}")
+            embed.set_footer(
+                text=f"{index['current'] + 1} of {index['max'] + 1}")
         return embed
 
     async def get_notes(self, user_id: str) -> Union[Tuple[dict], None]:
@@ -171,7 +177,8 @@ class Notes(commands.Cog):
         """Generate unique hash for a note"""
         unique = False
         while not unique:
-            note_hash = "".join(random.choice(string.ascii_lowercase + string.digits) for i in range(7))
+            note_hash = "".join(random.choice(
+                string.ascii_lowercase + string.digits) for i in range(7))
             data = await db.notes.find_one({"hash": note_hash})
             if not data:
                 return note_hash
