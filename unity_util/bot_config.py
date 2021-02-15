@@ -1,6 +1,9 @@
 import os
 from datetime import datetime
 
+import motor.motor_asyncio
+
+
 def get_env(key, required=False, or_else=None):
     value = os.environ.get(key)
 
@@ -31,15 +34,15 @@ DISCORD_VERIFIED_ROLE = get_env("DISCORD_VERIFIED_ROLE", or_else="29203361919782
 PRAW_CLIENT_ID = get_env("PRAW_CLIENT_ID", required=True)
 PRAW_CLIENT_SECRET = get_env("PRAW_CLIENT_SECRET", required=True)
 PRAW_PASSWORD = get_env("PRAW_PASSWORD", required=True)
-PRAW_USER_AGENT = get_env("PRAW_USER_AGENT",
-                          or_else="Checks if users are banned for our synced discord and keeps flairs synced")
+PRAW_USER_AGENT = get_env(
+    "PRAW_USER_AGENT",
+    or_else="Checks if users are banned for our synced discord and keeps flairs synced",
+)
 PRAW_USERNAME = get_env("PRAW_USERNAME", or_else="HWSUKMods")
 
 REACTION_CHANNEL_ID = int(get_env("REACTION_CHANNEL_ID", required=True))
 MOD_CHANNEL_ID = int(get_env("MOD_CHANNEL_ID", required=True))
 REACTION_THRESHOLD = int(get_env("REACTION_THRESHOLD", required=True))
-
-EMBED_REMOVER_CHANNEL_ID = int(get_env("EMBED_REMOVER_CHANNEL_ID", or_else=312673813311651853))
 
 BUY_SELL_CHANNEL_ID = int(get_env("BUY_SELL_CHANNEL_ID", required=True))
 BUY_SELL_LIMIT_SECONDS = int(get_env("BUY_SELL_LIMIT_SECONDS", or_else=259200))
@@ -47,6 +50,16 @@ BUY_SELL_BACKUP_DM_CHANNEL_ID = int(get_env("BUY_SELL_BACKUP_DM_CHANNEL_ID", or_
 
 DVLA_API_KEY = get_env("DVLA_API_KEY", required=True)
 
-REPORT_CHANNEL_ID = int(get_env("REPORT_CHANNEL_ID", or_else="810214651433582633"))
-
 LOGGING_FILENAME = get_env("LOGGING_FILENAME", or_else=f'bot-{datetime.now().strftime("%m-%d-%Y-%H%M%S")}.log')
+
+
+mongo = motor.motor_asyncio.AsyncIOMotorClient(
+    host=MONGODB_HOST,
+    port=int(MONGODB_PORT),
+    replicaSet="rs01",
+    username=MONGODB_USERNAME,
+    password=MONGODB_PASSWORD,
+    authSource=MONGODB_DATABASE,
+    authMechanism="SCRAM-SHA-1",
+)
+db = mongo[MONGODB_DATABASE]
