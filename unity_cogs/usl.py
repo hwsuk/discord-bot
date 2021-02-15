@@ -1,28 +1,25 @@
+import logging
 import re
 
 import discord
-
 from discord.ext import commands
-from unity_util import bot_config
+
 from unity_services import universal_scammer_list as usl
+from unity_util.embed_helper import error_message
 
 EMBED_BANNED_COLOUR = 0xB00E0E
 EMBED_NOT_BANNED_COLOUR = 0x3CB00E
 
-EMBED_BANNED_COLOUR = 0xb00e0e
-EMBED_NOT_BANNED_COLOUR = 0x3cb00e
-
 
 class UniversalScammerList(commands.Cog):
-
     def __init__(self, client):
         self.client = client
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Universal Scammer List search cog online')
+        logging.info("Universal Scammer List search cog online")
 
-    @commands.command(name='usl')
+    @commands.command(name="usl")
     async def query_universal_scammer_list(self, ctx, *, username):
         """
         Queries the Universal Scammer List to get information about a user.
@@ -30,8 +27,8 @@ class UniversalScammerList(commands.Cog):
 
         # Strip the username prefix, if it is present.
         # The USL API request will fail if we pass this in.
-        username = username.replace('u/', '')
-        username = username.replace('/', '')
+        username = username.replace("u/", "")
+        username = username.replace("/", "")
 
         # Check reddit username format.
         regex = re.compile("[A-Za-z0-9_-]+$")
@@ -56,11 +53,13 @@ class UniversalScammerList(commands.Cog):
                 "Something went wrong while querying the USL database. Please try again later, or contact the moderators for assistance.",
             )
 
-
     def make_embed(self, data: dict) -> discord.Embed:
-        embed = discord.Embed(title="USL Search Results", colour=EMBED_BANNED_COLOUR if data["banned"] else EMBED_NOT_BANNED_COLOUR)
+        embed = discord.Embed(
+            title="USL Search Results",
+            colour=discord.Colour.red() if data["banned"] else discord.Colour.green(),
+        )
         embed.add_field(name="Username", value=f"/u/{data['person']}")
-        embed.add_field(name="Banned", value=f"Yes!" if data["banned"] else "No")
+        embed.add_field(name="Banned", value="Yes" if data["banned"] else "No")
 
         if data["banned"]:
             embed.set_footer(text="⚠️ DO NOT trade with this user! ⚠️")
