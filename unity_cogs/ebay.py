@@ -216,7 +216,7 @@ class Ebay(commands.Cog):
             if final_string.startswith("Sold"):
                 return re.sub("  +", " ", final_string).replace("Sold ", "")
 
-        raise RuntimeError("")
+        raise RuntimeError("The given item did not contain a valid sold on date.")
 
     def find_quartiles(self, num_array: List[float]) -> List[float]:
         """Find quartile positions from a list of prices"""
