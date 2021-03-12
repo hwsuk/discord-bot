@@ -178,7 +178,7 @@ class Ebay(commands.Cog):
     def parse_date(self, product) -> datetime.datetime:
         """Retrieves the ended date from a product listing"""
         # Fetch the date string
-        base = product.find('span', {'class': 's-item__ended-date'}).contents[0]
+        base = self.build_date_string(product.find('div', {'class': 's-item__title--tagblock'}).contents[0].contents)
         # Interpret month and year
         month_regex = re.compile("\d{2}-(\w*)\W\d{2}:\d{2}")
         matched_month = month_regex.match(base).group(1)
@@ -187,6 +187,36 @@ class Ebay(commands.Cog):
         # Convert to datetime.datetime object
         date_string = f"{year} {base.replace(matched_month, months[matched_month])}"
         return dt.strptime(date_string, '%Y %d-%m %H:%M')
+
+    def build_date_string(self, tags) -> str:
+        """Deobfuscates the eBay sold on date element.
+        eBay has decided to split all characters into separate spans, and add some dummy characters,
+        presumably to keep us on our toes."""
+        # Get the class names to test for.
+        class_names = []
+        for tag in tags:
+            class_name = tag.attrs["class"][0]
+            if class_name not in class_names:
+                class_names.append(class_name)
+
+        # Iterate through the elements with that class name, building a string out of its contents
+        for class_name in class_names:
+            filtered_tags = [tag for tag in tags if tag.attrs["class"][0] == class_name]
+            final_string = ""
+
+            for tag in filtered_tags:
+                try:
+                    final_string += tag.contents[0]
+                except IndexError:
+                    # We have to be careful, as some of the tags are completely empty.
+                    continue
+
+            # If the final string begins with "Sold", then we know we have our date.
+            # Still, eBay throws us a final curveball: the string has some extra spaces in it, which we need to strip.
+            if final_string.startswith("Sold"):
+                return re.sub("  +", " ", final_string).replace("Sold ", "")
+
+        raise RuntimeError("")
 
     def find_quartiles(self, num_array: List[float]) -> List[float]:
         """Find quartile positions from a list of prices"""
