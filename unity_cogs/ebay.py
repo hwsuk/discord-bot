@@ -177,16 +177,8 @@ class Ebay(commands.Cog):
 
     def parse_date(self, product) -> datetime.datetime:
         """Retrieves the ended date from a product listing"""
-        # Fetch the date string
-        base = self.build_date_string(product.find('div', {'class': 's-item__title--tagblock'}).contents[0].contents)
-        # Interpret month and year
-        month_regex = re.compile("\d{2}-(\w*)\W\d{2}:\d{2}")
-        matched_month = month_regex.match(base).group(1)
-        months = {datetime.date(2020, i, 1).strftime('%B')[:3]: str(i) for i in range(1,13)}
-        year = dt.now().year if int(months[matched_month]) <= dt.now().month else dt.now().year - 1
-        # Convert to datetime.datetime object
-        date_string = f"{year} {base.replace(matched_month, months[matched_month])}"
-        return dt.strptime(date_string, '%Y %d-%m %H:%M')
+        date_string = self.build_date_string(product.find('div', {'class': 's-item__title--tagblock'}).contents[0].contents)
+        return dt.strptime(date_string, '%d %b %Y')
 
     def build_date_string(self, tags) -> str:
         """Deobfuscates the eBay sold on date element.
