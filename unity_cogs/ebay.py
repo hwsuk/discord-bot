@@ -9,7 +9,7 @@ import re
 import math
 from typing import Tuple, List
 
-headers = {'User-Agent': 'curl/7.68.0'}
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36'}
 
 class Ebay(commands.Cog):
 
@@ -34,7 +34,14 @@ class Ebay(commands.Cog):
         async with ctx.channel.typing():
             filtered_term, filtered_words = self.get_filter(search_term)
             page = await self.make_soup(filtered_term)
-            product_list = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
+            product_list = None
+
+            try:
+                product_list = page.find('ul', {'class': 'srp-results'}).find_all('li', {'class':'s-item'})
+            except AttributeError:
+                await ctx.send(embed=self.error_embed('parse_error'))
+                return
+
             products = [self.get_product_info(i) for i in product_list if self.get_product_info(i)]
             # Removes listings that don't pass the filter
             filtered_listings = [i for i in products if not self.filtered_out(i['title'], filtered_words)]
@@ -275,7 +282,9 @@ class Ebay(commands.Cog):
         """Generates an error embed"""
         errors = {
             'length': 'Your search must be more than 6 characters',
-            'timeout': 'The server failed to fetch a result'
+            'timeout': 'The server failed to fetch a result',
+            'parse_error': 'An error occurred while parsing the eBay response.\n\n'
+                           'This is likely due to eBay\'s implementation of CAPTCHA challenges - the bot developers are aware of this and are looking into a solution. Thanks for your patience in the meantime.'
         }
         return discord.Embed(title='Error', description=errors[error], colour=0xDD2E44)
 
