@@ -38,6 +38,7 @@ class Ebay(commands.Cog):
                 page = await self.make_soup(filtered_term)
             except (httpx.ReadError, httpx.ReadTimeout):
                 await ctx.send(embed=self.error_embed('read_timeout'))
+                return
 
             product_list = None
 
