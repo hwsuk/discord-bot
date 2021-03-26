@@ -33,7 +33,12 @@ class Ebay(commands.Cog):
 
         async with ctx.channel.typing():
             filtered_term, filtered_words = self.get_filter(search_term)
-            page = await self.make_soup(filtered_term)
+            page = None
+            try:
+                page = await self.make_soup(filtered_term)
+            except (httpx.ReadError, httpx.ReadTimeout):
+                await ctx.send(embed=self.error_embed('read_timeout'))
+
             product_list = None
 
             try:
@@ -282,9 +287,10 @@ class Ebay(commands.Cog):
         """Generates an error embed"""
         errors = {
             'length': 'Your search must be more than 6 characters',
-            'timeout': 'The server failed to fetch a result',
             'parse_error': 'An error occurred while parsing the eBay response.\n\n'
-                           'This is likely due to eBay\'s implementation of CAPTCHA challenges - the bot developers are aware of this and are looking into a solution. Thanks for your patience in the meantime.'
+                           'This is likely due to eBay\'s implementation of CAPTCHA challenges - the bot developers are aware of this and are looking into a solution. Thanks for your patience in the meantime.',
+            'read_timeout': 'A response was not received from eBay in a timely manner.\n\n'
+                            'Either eBay is down altogether (unlikely), or eBay has IP blocked the server the bot is running on. In either case, the bot developers are aware of the issue, and are looking into a solution. Thanks for your patience.'
         }
         return discord.Embed(title='Error', description=errors[error], colour=0xDD2E44)
 
