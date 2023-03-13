@@ -297,7 +297,7 @@ class Verify(commands.Cog):
         if trades:
             embed.add_field(name='Trades', value=trades, inline=False)
         usl_status = await usl.fetch_usl_user_data(user_data['reddit']['name'])
-        embed.add_field(name="On USL", value="Yes!" if usl_status['banned'] else "No", inline=True)
+        embed.add_field(name="On USL", value="Unknown - USL API unavailable", inline=True)
         days_ago = dt.now() - dt.fromtimestamp(user_data['verified_at'])
         embed.set_footer(text=f"Verified {days_ago.days} days ago")
         return embed
