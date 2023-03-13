@@ -4,15 +4,18 @@ usl_query_base_url = "https://universalscammerlist.com/api/query.php?query={}&ha
 
 
 async def fetch_usl_user_data(username):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(usl_query_base_url.format(username))
+    # The USL API is currently MIA, just return a placeholder for now
+    return "Unknown - USL API down"
 
-    if response.status_code != 200:
-        raise RuntimeError(f"USL request failed: HTTP {response.status_code}")
+    # async with httpx.AsyncClient() as client:
+    #     response = await client.get(usl_query_base_url.format(username))
 
-    json = response.json()
+    # if response.status_code != 200:
+    #     raise RuntimeError(f"USL request failed: HTTP {response.status_code}")
 
-    if not "data" in json:
-        raise RuntimeError("Invalid response from USL API: no 'data' key")
+    # json = response.json()
 
-    return json["data"]
+    # if not "data" in json:
+    #     raise RuntimeError("Invalid response from USL API: no 'data' key")
+
+    # return json["data"]
